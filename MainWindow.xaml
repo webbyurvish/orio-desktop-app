@@ -1,0 +1,266 @@
+<Window x:Class="AiInterviewAssistant.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AiInterviewAssistant"
+        Title="Orio AI"
+        Width="560" MinHeight="200"
+        SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ResizeMode="NoResize"
+        FocusVisualStyle="{x:Null}"
+        Loaded="Window_Loaded"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Rounded button style -->
+        <Style x:Key="RoundedButton" TargetType="Button">
+            <Setter Property="Background" Value="#AA393939"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Implicit Button style is scoped under MainContentGrid only so StartupLoginView is not affected. -->
+        <!-- Clear buttons: dark gray per screenshot -->
+        <Style x:Key="ClearButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+            <Setter Property="Background" Value="#AA393939"/>
+        </Style>
+        <!-- Primary action (AI Answer, Ask): desaturated blue-gray per screenshot -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+            <Setter Property="Background" Value="#AA535A65"/>
+        </Style>
+        <Style x:Key="AskButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+            <Setter Property="Background" Value="#AA535A65"/>
+        </Style>
+        <!-- Close icon button -->
+        <Style x:Key="CloseIconButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Content" Value="✕"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <!-- Black transparent scrollbar -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid Background="Transparent">
+                            <Border Background="#22000000" CornerRadius="4" Margin="2,4"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border Background="#66000000" CornerRadius="4" Margin="1,2"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Startup: code sets Background transparent + SizeToContent so only the login card is visible -->
+    <Border x:Name="RootChromeBorder"
+            CornerRadius="12"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Padding="0">
+
+        <Grid>
+            <local:StartupLoginView x:Name="StartupLoginView"/>
+            <local:SessionSetupView x:Name="SessionSetupView" Visibility="Collapsed"/>
+            <local:PastSessionsView x:Name="PastSessionsView" Visibility="Collapsed"/>
+            <local:CreateSessionDetailsView x:Name="CreateSessionDetailsView" Visibility="Collapsed"/>
+            <local:CreateSessionStep2View x:Name="CreateSessionStep2View" Visibility="Collapsed"/>
+            <local:ActivateSessionView x:Name="ActivateSessionView" Visibility="Collapsed"/>
+            <Grid x:Name="MainContentGrid" Visibility="Collapsed">
+            <Grid.Resources>
+                <Style TargetType="Button" BasedOn="{StaticResource RoundedButton}"/>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top bar: Hide, Mic, Speaker (left), title (center), red X (right) -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                <Button Content="✕" Width="28" Height="28" Padding="0"
+                        DockPanel.Dock="Right" Margin="6,0,0,0"
+                        Background="#33FF5555" Foreground="White"
+                        Click="CloseButton_Click"/>
+                <Button x:Name="EndSessionButton"
+                        Content="⏹"
+                        Width="28" Height="28" Padding="0"
+                        DockPanel.Dock="Right"
+                        Margin="6,0,0,0"
+                        Background="Transparent"
+                        BorderBrush="#44FFFFFF"
+                        BorderThickness="1"
+                        Foreground="White"
+                        ToolTip="End session"
+                        Click="EndSessionButton_Click"
+                        IsEnabled="False"/>
+                <Border DockPanel.Dock="Right"
+                        Background="#66252525"
+                        CornerRadius="8"
+                        BorderBrush="#44FFFFFF"
+                        BorderThickness="1"
+                        Padding="10,0"
+                        Height="28"
+                        VerticalAlignment="Center"
+                        Margin="0,0,6,0">
+                    <TextBlock x:Name="SessionTimerTextBlock"
+                               Text="00:00"
+                               Foreground="#FFE5E7EB"
+                               FontWeight="SemiBold"
+                               FontSize="12.5"
+                               FontFamily="Segoe UI"
+                               VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Orio AI"
+                           Foreground="White" FontWeight="SemiBold" FontSize="14" FontFamily="Segoe UI"
+                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button x:Name="HideButton" Content="Hide"
+                            Width="48" Height="28" Padding="6,0" Margin="0,0,6,0"
+                            Background="#AA393939" Foreground="White"
+                            Click="HideButton_Click"/>
+                    <Button x:Name="MicToggleButton" Content="Mic On"
+                            Width="64" Height="28" Padding="6,0" Margin="0,0,6,0"
+                            Background="#AA535A65" Foreground="White"
+                            Click="MicToggleButton_Click"/>
+                    <Button x:Name="SpeakerToggleButton" Content="Speaker On"
+                            Width="80" Height="28" Padding="6,0"
+                            Background="#AA535A65" Foreground="White"
+                            Click="SpeakerToggleButton_Click"/>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Transcript area (same height as question) -->
+            <Grid Grid.Row="1" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Background="#66252525" CornerRadius="8" BorderBrush="#44FFFFFF" BorderThickness="1"
+                        Margin="0,0,8,0" Height="42">
+                    <TextBox x:Name="TranscriptTextBlock"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="White" TextWrapping="Wrap" FontSize="13"
+                             FontFamily="Segoe UI" FontWeight="SemiBold"
+                             VerticalContentAlignment="Top" Padding="10,8"
+                             IsReadOnly="True" Text=""/>
+                </Border>
+
+                <Button x:Name="TranscriptClearButton" Grid.Column="1" Content="Clear" Width="72" Margin="0,0,8,0"
+                        Click="TranscriptClearButton_Click" Style="{StaticResource ClearButtonStyle}"/>
+                <Button x:Name="AiAnswerButton" Grid.Column="2" Content="AI Answer" Width="92"
+                        Click="AiAnswerButton_Click" Style="{StaticResource PrimaryButton}"/>
+            </Grid>
+
+            <!-- Question input (same height as transcript) -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Background="#66252525" CornerRadius="8" BorderBrush="#44FFFFFF" BorderThickness="1"
+                        Margin="0,0,8,0" Height="42">
+                    <TextBox x:Name="QuestionTextBox"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="White" TextWrapping="Wrap" FontSize="13"
+                             FontFamily="Segoe UI" FontWeight="SemiBold"
+                             VerticalContentAlignment="Center" Padding="10,8"
+                             Text=""/>
+                </Border>
+
+                <Button x:Name="QuestionClearButton" Grid.Column="1" Content="Clear" Width="72" Margin="0,0,8,0"
+                        Click="QuestionClearButton_Click" Style="{StaticResource ClearButtonStyle}"/>
+                <Button x:Name="AskButton" Grid.Column="2" Content="Ask" Width="72"
+                        Click="AskButton_Click" Style="{StaticResource AskButtonStyle}"/>
+            </Grid>
+
+            <!-- Status/debug line (always visible) -->
+            <Border Grid.Row="3" Background="#33101010" CornerRadius="8" BorderBrush="#22FFFFFF" BorderThickness="1" Padding="8" Margin="0,6,0,0">
+                <TextBlock x:Name="StatusTextBlock"
+                           Foreground="#FFB0B0B0" FontSize="11" FontFamily="Segoe UI"
+                           TextWrapping="Wrap" Text="Idle"/>
+            </Border>
+
+            <!-- AI Answer section: visible only when there is an answer; no space when collapsed -->
+            <Grid x:Name="AnswerSectionPanel" Grid.Row="4" Margin="0,10,0,0" Visibility="Collapsed"
+                  MinHeight="120">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="AI Answer:" Foreground="White" FontWeight="SemiBold" FontSize="13"
+                               FontFamily="Segoe UI" VerticalAlignment="Center"/>
+                    <Button x:Name="CloseAnswerButton" Grid.Column="1" Content="✕"
+                            Width="28" Height="28" Padding="0" FontSize="14"
+                            Background="#33FFFFFF" Foreground="White"
+                            Click="CloseAnswerButton_Click"
+                            Style="{StaticResource CloseIconButton}"
+                            HorizontalAlignment="Right"
+                            IsHitTestVisible="True"/>
+                </Grid>
+                <Border Grid.Row="1" Background="#66101010" CornerRadius="8" BorderBrush="#44FFFFFF" BorderThickness="1"
+                        MinHeight="80" Padding="10">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalAlignment="Stretch">
+                        <TextBlock x:Name="AiAnswerTextBlock"
+                                   Foreground="#FFE8E8FF" TextWrapping="Wrap" FontSize="13"
+                                   FontFamily="Segoe UI" FontWeight="SemiBold"
+                                   LineHeight="20" MaxWidth="500"/>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
