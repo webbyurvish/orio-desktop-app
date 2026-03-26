@@ -25,6 +25,12 @@ Name: "{commondesktop}\\Orio AI Desktop"; Filename: "{app}\\AiInterviewAssistant
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
+[Registry]
+; Register orioai:// protocol for this user
+Root: HKCU; Subkey: "Software\Classes\orioai"; ValueType: string; ValueName: ""; ValueData: "URL:Orio AI Session"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\orioai"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\orioai\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\AiInterviewAssistant.exe"" ""%1"""; Flags: uninsdeletekey
+
 [Run]
 Filename: "{app}\\AiInterviewAssistant.exe"; Description: "Launch Orio AI Desktop"; Flags: nowait postinstall skipifsilent
 

@@ -37,7 +37,7 @@ public partial class App : Application
             DesktopLogger.Error("Failed to load appsettings.json; using defaults.");
         }
 
-        // If launched via parakeetai://start?sessionId=...&apiBaseUrl=...&token=..., override settings so this session is used for logging
+        // If launched via orioai://start?sessionId=...&apiBaseUrl=...&token=..., override settings so this session is used for logging
         ApplyProtocolLaunchArgs(e.Args);
         DesktopLogger.Info($"After protocol parse: LaunchedViaProtocol={LaunchedViaProtocol} ApiBaseUrl={Settings.ApiBaseUrl} CallSessionId={Settings.CallSessionId} TokenPresent={!string.IsNullOrWhiteSpace(Settings.ApiBearerToken)}");
     }
@@ -47,11 +47,11 @@ public partial class App : Application
         // When launched via protocol from browser, the URL may be in StartupEventArgs.Args or in Environment.GetCommandLineArgs().
         // Args from WPF can be empty when launched via ShellExecute; the URL is often the second argument (index 1) in the full command line.
         var allArgs = Environment.GetCommandLineArgs();
-        var urlArg = (startupArgs?.FirstOrDefault(a => a?.StartsWith("parakeetai://", StringComparison.OrdinalIgnoreCase) == true))
+        var urlArg = (startupArgs?.FirstOrDefault(a => a?.StartsWith("orioai://", StringComparison.OrdinalIgnoreCase) == true))
             ?? (allArgs.Length > 1 ? allArgs[1] : null)
-            ?? allArgs.FirstOrDefault(a => a?.StartsWith("parakeetai://", StringComparison.OrdinalIgnoreCase) == true);
+            ?? allArgs.FirstOrDefault(a => a?.StartsWith("orioai://", StringComparison.OrdinalIgnoreCase) == true);
 
-        if (string.IsNullOrEmpty(urlArg) || !urlArg.StartsWith("parakeetai://", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(urlArg) || !urlArg.StartsWith("orioai://", StringComparison.OrdinalIgnoreCase))
             return;
 
         try

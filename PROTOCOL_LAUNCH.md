@@ -1,4 +1,4 @@
-# Desktop App – Launch from dashboard (parakeetai://)
+# Desktop App – Launch from dashboard (orioai://)
 
 The dashboard can open this app with a specific **call session** and **API token** so conversation is saved to that session.
 
@@ -6,9 +6,9 @@ The dashboard can open this app with a specific **call session** and **API token
 
 1. In the dashboard, when you click **Desktop App** in the "Choose Platform" modal (after creating a session or when opening a session from the list), the browser navigates to a URL like:
    ```
-   parakeetai://start?sessionId=<GUID>&apiBaseUrl=<...>&token=<JWT>
+   orioai://start?sessionId=<GUID>&apiBaseUrl=<...>&token=<JWT>
    ```
-2. If the `parakeetai://` protocol is registered on your PC, Windows starts this app and passes that URL as a command-line argument.
+2. If the `orioai://` protocol is registered on your PC, Windows starts this app and passes that URL as a command-line argument.
 3. The app parses the URL and uses that **session id**, **API base URL**, and **token** for the rest of the run. All transcript and AI answers are then sent to that session.
 
 ## Register the protocol (one-time)
@@ -27,12 +27,12 @@ If the exe is elsewhere, edit the script and set `EXE_PATH` to the full path of 
 
 1. Win+R → `regedit` → Enter.
 2. Under `HKEY_CURRENT_USER\Software\Classes`, create:
-   - Key: `parakeetai`
-     - Default value: `URL:ParakeetAI Session`
+   - Key: `orioai`
+     - Default value: `URL:Orio AI Session`
      - String value: `URL Protocol` = (empty)
-   - Key: `parakeetai\shell\open\command`
+   - Key: `orioai\shell\open\command`
      - Default value: `"C:\Path\To\AiInterviewAssistant.exe" "%1"`
-       (Replace with the real path to your exe; `%1` is the full `parakeetai://...` URL.)
+       (Replace with the real path to your exe; `%1` is the full `orioai://...` URL.)
 
 ## After install (for end users)
 
