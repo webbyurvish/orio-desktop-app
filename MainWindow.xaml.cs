@@ -110,6 +110,7 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _activeLoginCts;
     private int _loginAttemptVersion;
     private bool _isFreeSessionFlow = true;
+    private bool _pendingProtocolActivation;
 
     private DispatcherTimer? _sessionTimer;
     private DateTimeOffset _sessionStartUtc;
@@ -150,6 +151,7 @@ public partial class MainWindow : Window
             // If parsing fails, use the fixed session id you requested for now
             _callSessionId = Guid.Parse("AB589C99-0980-4467-8AF5-ADAB340FE1A0");
         }
+        _pendingProtocolActivation = App.LaunchedViaProtocol && _callSessionId != Guid.Empty;
 
         if (Guid.TryParse(settings.ResumeId, out var rid))
         {
@@ -225,6 +227,9 @@ public partial class MainWindow : Window
         CreateSessionStep2View.LogoutRequested += async (_, _) => await PerformLogoutAsync();
         ActivateSessionView.DashboardRequested += (_, _) => OpenWebDashboardHome();
         ActivateSessionView.LogoutRequested += async (_, _) => await PerformLogoutAsync();
+
+        // If app is opened via protocol and auth already exists, skip startup/login and go straight to activation.
+        NavigateAfterAuthentication(source: "startup");
     }
 
     /// <summary>
@@ -371,7 +376,7 @@ public partial class MainWindow : Window
             _apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
             DesktopLogger.Info($"[AUTH:{authTraceId}] Desktop login successful. API bearer updated accessLen={tokens.AccessToken.Length} refreshLen={tokens.RefreshToken.Length}");
             StartupLoginView.SetLoginStatus("Login successful.");
-            ShowSessionSetupView();
+            NavigateAfterAuthentication(source: $"login:{authTraceId}");
         }
         catch (OperationCanceledException)
         {
@@ -400,6 +405,25 @@ public partial class MainWindow : Window
             DesktopLogger.Info($"[AUTH:{authTraceId}] Desktop login attempt finished and lock released.");
             _loginFlowLock.Release();
         }
+    }
+
+    private bool IsApiAuthenticated() =>
+        _apiClient.DefaultRequestHeaders.Authorization != null;
+
+    private void NavigateAfterAuthentication(string source)
+    {
+        if (!IsApiAuthenticated())
+            return;
+
+        if (_pendingProtocolActivation)
+        {
+            _pendingProtocolActivation = false;
+            DesktopLogger.Info($"Protocol launch session detected. Routing to ActivateSessionView source={source} sessionId={_callSessionId}");
+            ShowActivateSessionView();
+            return;
+        }
+
+        ShowSessionSetupView();
     }
 
     private void ShowSessionSetupView()
