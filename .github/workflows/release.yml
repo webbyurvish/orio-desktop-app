@@ -36,15 +36,21 @@ jobs:
           --self-contained false
           -o "./publish"
 
-      - name: Zip artifact
+      - name: Install Inno Setup
         shell: pwsh
         run: |
-          $zip = "orio-desktop-app-win-x64.zip"
-          if (Test-Path $zip) { Remove-Item $zip -Force }
-          Compress-Archive -Path ".\\publish\\*" -DestinationPath $zip
+          choco install innosetup -y --no-progress
+
+      - name: Build installer (setup.exe)
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag -replace '^desktop-v',''
+          if ([string]::IsNullOrWhiteSpace($ver)) { $ver = "1.0.0" }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" ".\installer\orio-desktop.iss" "/DAppVersion=$ver"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            orio-desktop-app-win-x64.zip
+            installer/output/orio-desktop-setup.exe
