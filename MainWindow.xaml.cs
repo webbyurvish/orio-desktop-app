@@ -13,8 +13,6 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Azure;
-using Azure.AI.OpenAI;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using NAudio.Wave;
@@ -78,9 +76,27 @@ public partial class MainWindow : Window
     private bool _micOn = true;
     private bool _speakerOn = true;
 
-    private readonly OpenAIClient _openAiClient;
     private readonly string _deploymentName;
     private readonly string _systemPrompt;
+    private sealed class DesktopAiAnswerRequest
+    {
+        public string? UserContent { get; set; }
+        public string? SystemPrompt { get; set; }
+        public string? ResumeContext { get; set; }
+    }
+
+    private sealed class DesktopAiAnswerResponse
+    {
+        public string Answer { get; set; } = string.Empty;
+    }
+
+    private sealed class DesktopSpeechTokenResponse
+    {
+        public string Region { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public int ExpiresInSeconds { get; set; }
+    }
+
     private readonly HttpClient _apiClient;
     private Guid _callSessionId;
     private readonly Guid? _resumeId;
@@ -112,10 +128,6 @@ public partial class MainWindow : Window
 
         var settings = App.Settings;
         _desktopWebAuthService = new DesktopWebAuthService(settings.DesktopAuth);
-
-        _openAiClient = new OpenAIClient(
-            new Uri(settings.AzureOpenAI.Endpoint),
-            new AzureKeyCredential(settings.AzureOpenAI.Key));
 
         _deploymentName = settings.AzureOpenAI.DeploymentName;
         _systemPrompt = settings.AzureOpenAI.SystemPrompt;
@@ -905,7 +917,24 @@ public partial class MainWindow : Window
         try
         {
             var s = App.Settings.AzureSpeech;
-            var config = SpeechConfig.FromSubscription(s.Key, s.Region);
+            SpeechConfig config;
+            if (!string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Region))
+            {
+                config = SpeechConfig.FromSubscription(s.Key, s.Region);
+            }
+            else
+            {
+                var tokenInfo = await GetServerSpeechTokenAsync();
+                if (tokenInfo == null || string.IsNullOrWhiteSpace(tokenInfo.Token) || string.IsNullOrWhiteSpace(tokenInfo.Region))
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusTextBlock.Text = "Speech is not configured (local or server).";
+                    });
+                    return;
+                }
+                config = SpeechConfig.FromAuthorizationToken(tokenInfo.Token, tokenInfo.Region);
+            }
             config.SetProperty("SPEECH-EndpointSilenceTimeoutMs", s.EndpointSilenceTimeoutMs);
             config.SpeechRecognitionLanguage = "en-US";
 
@@ -1398,7 +1427,7 @@ public partial class MainWindow : Window
         {
             AiAnswerButton.IsEnabled = false;
             AskButton.IsEnabled = false;
-            StatusTextBlock.Text = "Thinking (Azure OpenAI)...";
+            StatusTextBlock.Text = "Thinking (server AI)...";
 
             var basePrompt = string.IsNullOrWhiteSpace(systemPrompt) ? _systemPrompt : systemPrompt;
             // Ensure the model always speaks as the candidate, not as an AI assistant.
@@ -1407,25 +1436,20 @@ public partial class MainWindow : Window
                 "Always answer in FIRST PERSON as that candidate. " +
                 "Never mention that you are an AI, assistant, or language model. " +
                 "Use the resume details (name, experience, skills, education) to answer questions such as 'What is your name?' or 'Introduce yourself' as the candidate.";
-            var options = new ChatCompletionsOptions
+            var payload = new DesktopAiAnswerRequest
             {
-                DeploymentName = _deploymentName,
+                UserContent = userContent,
+                SystemPrompt = basePrompt,
+                ResumeContext = _resumeContext
             };
-
-            // Base system prompt
-            options.Messages.Add(new ChatRequestSystemMessage(basePrompt));
-
-            // Optional resume context
-            if (!string.IsNullOrWhiteSpace(_resumeContext))
+            var response = await _apiClient.PostAsJsonAsync("desktop/ai/answer", payload);
+            if (!response.IsSuccessStatusCode)
             {
-                options.Messages.Add(new ChatRequestSystemMessage("Here is the candidate's resume. Use this as context when answering:\n\n" + _resumeContext));
+                var body = await response.Content.ReadAsStringAsync();
+                throw new Exception($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {body}");
             }
-
-            // User message
-            options.Messages.Add(new ChatRequestUserMessage(userContent));
-
-            var response = await _openAiClient.GetChatCompletionsAsync(options);
-            var completion = response.Value.Choices[0].Message.Content ?? string.Empty;
+            var result = await response.Content.ReadFromJsonAsync<DesktopAiAnswerResponse>();
+            var completion = result?.Answer ?? string.Empty;
 
             AiAnswerTextBlock.Text = completion;
             if (FindName("AnswerSectionPanel") is System.Windows.UIElement panel)
@@ -1455,6 +1479,25 @@ public partial class MainWindow : Window
         {
             AiAnswerButton.IsEnabled = true;
             AskButton.IsEnabled = true;
+        }
+    }
+
+    private async Task<DesktopSpeechTokenResponse?> GetServerSpeechTokenAsync()
+    {
+        try
+        {
+            using var res = await _apiClient.GetAsync("desktop/speech/token");
+            if (!res.IsSuccessStatusCode)
+            {
+                DesktopLogger.Warn($"GET desktop/speech/token failed status={(int)res.StatusCode}");
+                return null;
+            }
+            return await res.Content.ReadFromJsonAsync<DesktopSpeechTokenResponse>();
+        }
+        catch (Exception ex)
+        {
+            DesktopLogger.Warn($"GetServerSpeechTokenAsync failed: {ex.Message}");
+            return null;
         }
     }
 
