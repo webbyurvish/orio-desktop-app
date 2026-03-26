@@ -1,0 +1,31 @@
+<Window x:Class="AiInterviewAssistant.RestoreChipWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title=""
+        Width="56"
+        Height="56"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SnapsToDevicePixels="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Grid Width="56" Height="56">
+        <Ellipse Width="48"
+                 Height="48"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 Stroke="#FFFFFF"
+                 StrokeThickness="2">
+            <Ellipse.Fill>
+                <SolidColorBrush Color="#22C55E"/>
+            </Ellipse.Fill>
+            <Ellipse.Effect>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Opacity="0.25" Color="#0F172A"/>
+            </Ellipse.Effect>
+        </Ellipse>
+    </Grid>
+</Window>

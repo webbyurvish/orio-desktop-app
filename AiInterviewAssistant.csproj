@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.12" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.2.1" />
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.40.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Ensure login view XAML is always compiled into the app (avoids stale UI if glob/exclude is wrong). -->
+  <ItemGroup>
+    <Page Update="AppHeaderView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="StartupLoginView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="SessionSetupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="PastSessionsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="CreateSessionDetailsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="CreateSessionStep2View.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="ActivateSessionView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+
+*.user
+*.suo
+*.cache
+*.log
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Installer/build outputs (if you generate later)
+publish/
+artifacts/
+TestResults/

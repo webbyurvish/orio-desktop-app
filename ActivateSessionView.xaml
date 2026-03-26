@@ -1,0 +1,98 @@
+<UserControl x:Class="AiInterviewAssistant.ActivateSessionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:local="clr-namespace:AiInterviewAssistant"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Background="Transparent"
+             FontFamily="Segoe UI">
+
+    <UserControl.Resources>
+        <Style x:Key="MenuRowButton" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F1F5F9"/></Trigger></Style.Triggers>
+        </Style>
+        <Style x:Key="MoveSlotBtn" TargetType="Border">
+            <Setter Property="Width" Value="72"/><Setter Property="Height" Value="56"/><Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#F8FAFC"/><Setter Property="BorderBrush" Value="#CBD5E1"/><Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="4"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#EEF2F7"/></Trigger></Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="#FFFFFF" CornerRadius="20" BorderBrush="#E2E8F0" BorderThickness="1" Width="520" MinHeight="200" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+            <local:AppHeaderView x:Name="SharedHeader" Grid.Row="0" CreditsText="2 Credits"
+                                 MoreClicked="Header_MoreClicked" MoveClicked="Header_MoveClicked"
+                                 MinimizeClicked="Header_MinimizeClicked" CloseClicked="Header_CloseClicked"
+                                 HeaderBackground="#E7EBF3"/>
+
+            <Border Grid.Row="1" Background="White" CornerRadius="0,0,20,20" Padding="12,14,12,12">
+                <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="14" Padding="14,16,14,12">
+                    <StackPanel>
+                        <TextBlock Text="Activate Interview Session" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,4,0,10"/>
+                        <TextBlock Text="This will use 0.5 of your interview credit for first minutes."
+                                   FontSize="14" Foreground="#4B5563" TextAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="The session will auto extend by 30 minutes 30 seconds before it ends."
+                                   FontSize="14" Foreground="#4B5563" TextAlignment="Center" TextWrapping="Wrap" Margin="20,0,20,18"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,6,0" Cursor="Hand" MouseLeftButtonDown="Back_Click">
+                                <TextBlock Text="Back" Foreground="#374151" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border Grid.Column="1" CornerRadius="8" Padding="10" Margin="6,0,0,0" Cursor="Hand" MouseLeftButtonDown="Activate_Click">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5"><GradientStop Color="#0F172A" Offset="0"/><GradientStop Color="#27364F" Offset="1"/></LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="Activate (0.5 credit)" Foreground="White" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <Popup x:Name="MoreOptionsPopup" Placement="Bottom" VerticalOffset="8" HorizontalOffset="-6" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+                <Border MinWidth="272" MaxWidth="340" Background="#FFFFFF" CornerRadius="16" BorderBrush="#E2E8F0" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
+                    <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="3" Direction="270" Opacity="0.12" Color="#0F172A"/></Border.Effect>
+                    <StackPanel Margin="4,6,4,8">
+                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="12,12,0,0" MouseLeftButtonDown="MenuDashboard_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="20" Height="20" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Dashboard" FontSize="14.5" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Height="1" Background="#E2E8F0" Margin="14,6,14,0"/>
+                        <Border Style="{StaticResource MenuRowDanger}" MouseLeftButtonDown="MenuLogout_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Logout" Width="20" Height="20" Foreground="#DC2626" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Logout" FontSize="14.5" FontWeight="SemiBold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <Popup x:Name="MoveOptionsPopup" Placement="Bottom" VerticalOffset="6" HorizontalOffset="-78" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+                <Border Background="#FFFFFF" CornerRadius="14" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12" SnapsToDevicePixels="True">
+                    <Border.Effect><DropShadowEffect BlurRadius="20" ShadowDepth="2" Direction="270" Opacity="0.14" Color="#0F172A"/></Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                    </Grid>
+                </Border>
+            </Popup>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,336 @@
+<UserControl x:Class="AiInterviewAssistant.StartupLoginView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:local="clr-namespace:AiInterviewAssistant"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Background="Transparent"
+             FontFamily="Segoe UI">
+
+    <UserControl.Resources>
+        <Style TargetType="Button" BasedOn="{x:Null}"/>
+
+        <!-- Header chrome: soft pill buttons (reference: light grey, rounded, slight lift) -->
+        <Style x:Key="IconBtn" TargetType="Border">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="#F3F5F9"/>
+            <Setter Property="BorderBrush" Value="#D8DEE8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="0.5" Direction="270" Opacity="0.12" Color="#1E293B"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Menu row hover -->
+        <Style x:Key="MenuRowButton" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F1F5F9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MenuTinyIconBtn" TargetType="Border">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MoveSlotBtn" TargetType="Border">
+            <Setter Property="Width" Value="72"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="4"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EEF2F7"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- MAIN CARD: width &lt; MainWindow (560) so nothing clips and margins look even -->
+    <Border Background="#FFFFFF"
+            CornerRadius="20"
+            BorderBrush="#E2E8F0"
+            BorderThickness="1"
+            Width="520"
+            MinHeight="200"
+            Padding="0"
+            SnapsToDevicePixels="True"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <local:AppHeaderView x:Name="SharedHeader"
+                                 Grid.Row="0"
+                                 CreditsText="No Credits"
+                                 MoreClicked="SharedHeader_MoreClicked"
+                                 MoveClicked="SharedHeader_MoveClicked"
+                                 MinimizeClicked="SharedHeader_MinimizeClicked"
+                                 CloseClicked="SharedHeader_CloseClicked"
+                                 HeaderDragRequested="SharedHeader_HeaderDragRequested"/>
+
+            <!-- BODY: Border wrapper provides padding (Grid has no Padding in WPF) -->
+            <Border Grid.Row="1"
+                    Background="Transparent"
+                    Padding="18,20,18,20">
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="ParakeetAI"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           Foreground="#0F172A"
+                           HorizontalAlignment="Center"/>
+
+                <TextBlock Grid.Row="1"
+                           Text="Login to your ParakeetAI account to start your interview."
+                           FontSize="14.5"
+                           Foreground="#64748B"
+                           LineHeight="22"
+                           Margin="0,12,0,0"
+                           MaxWidth="440"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"/>
+
+                <!-- Equal left/right space: two star columns share whatever remains after 432px button -->
+                <Grid Grid.Row="2"
+                      Margin="0,18,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="432"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="1"
+                            x:Name="LoginBorder"
+                            Height="48"
+                            CornerRadius="10"
+                            Cursor="Hand"
+                            Padding="12,0"
+                            MouseLeftButtonDown="LoginBorder_MouseLeftButtonDown">
+
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Color="#0F172A" Offset="0"/>
+                                <GradientStop Color="#1E293B" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+
+                        <TextBlock x:Name="LoginButtonText"
+                                   Text="Login"
+                                   Foreground="White"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+
+                <TextBlock Grid.Row="2"
+                           x:Name="LoginStatusText"
+                           Margin="0,72,0,0"
+                           Text=""
+                           FontSize="12.5"
+                           Foreground="#64748B"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"/>
+            </Grid>
+            </Border>
+
+            <!-- Dropdown (sibling of header/body grid — not inside clipped header) -->
+            <Popup x:Name="MoreOptionsPopup"
+                   Placement="Bottom"
+                   VerticalOffset="8"
+                   HorizontalOffset="-6"
+                   StaysOpen="True"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                <Border MinWidth="272"
+                        MaxWidth="340"
+                        Background="#FFFFFF"
+                        CornerRadius="16"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        Padding="0"
+                        SnapsToDevicePixels="True">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="3" Direction="270" Opacity="0.12" Color="#0F172A"/>
+                    </Border.Effect>
+                    <StackPanel Margin="4,6,4,8">
+                        <!-- Dashboard -->
+                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="12,12,0,0" MouseLeftButtonDown="MenuDashboard_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="ViewDashboard"
+                                                            Width="20" Height="20"
+                                                            Foreground="#334155"
+                                                            VerticalAlignment="Center"
+                                                            Margin="0,0,12,0"/>
+                                <TextBlock Text="Dashboard"
+                                           FontSize="14.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#1E293B"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Height="1" Background="#E2E8F0" Margin="14,0"/>
+
+                        <!-- Next Screen -->
+                        <Border Style="{StaticResource MenuRowButton}" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="Transparent" MouseLeftButtonDown="MenuNextScreen_Click">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Next Screen"
+                                               FontSize="14"
+                                               Foreground="#334155"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0"/>
+                                    <Border Width="18" Height="18" CornerRadius="9" BorderBrush="#94A3B8" BorderThickness="1" Background="Transparent">
+                                        <TextBlock Text="i"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Foreground="#64748B"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource MenuTinyIconBtn}"
+                                        Width="32" Height="32"
+                                        MouseLeftButtonDown="MenuNextScreenArrow_Click">
+                                    <iconPacks:PackIconMaterial Kind="ChevronRight"
+                                                                Width="16" Height="16"
+                                                                Foreground="#475569"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <Border Height="1" Background="#E2E8F0" Margin="14,0"/>
+
+                        <!-- Zoom -->
+                        <Border Padding="14,12,14,14" Background="Transparent" CornerRadius="0,0,12,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Zoom"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#475569"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Border Style="{StaticResource MenuTinyIconBtn}" Margin="0,0,6,0" MouseLeftButtonDown="MenuZoomPlus_Click">
+                                        <iconPacks:PackIconMaterial Kind="Plus" Width="16" Height="16" Foreground="#475569"
+                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Style="{StaticResource MenuTinyIconBtn}" Margin="0,0,6,0" MouseLeftButtonDown="MenuZoomMinus_Click">
+                                        <iconPacks:PackIconMaterial Kind="Minus" Width="16" Height="16" Foreground="#475569"
+                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Style="{StaticResource MenuTinyIconBtn}" MouseLeftButtonDown="MenuZoomReset_Click">
+                                        <iconPacks:PackIconMaterial Kind="Refresh" Width="15" Height="15" Foreground="#475569"
+                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <Popup x:Name="MoveOptionsPopup"
+                   Placement="Bottom"
+                   VerticalOffset="6"
+                   HorizontalOffset="-78"
+                   StaysOpen="True"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                <Border Background="#FFFFFF"
+                        CornerRadius="14"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        Padding="12"
+                        SnapsToDevicePixels="True">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="20" ShadowDepth="2" Direction="270" Opacity="0.14" Color="#0F172A"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopLeft_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopCenter_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopRight_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomLeft_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomCenter_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomRight_Click">
+                            <iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Popup>
+        </Grid>
+    </Border>
+</UserControl>
