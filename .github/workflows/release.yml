@@ -1,0 +1,47 @@
+name: Build and release Desktop App (Windows)
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore "./AiInterviewAssistant.csproj"
+
+      - name: Publish (win-x64)
+        run: >
+          dotnet publish "./AiInterviewAssistant.csproj"
+          -c Release
+          -r win-x64
+          --self-contained false
+          -o "./publish"
+
+      - name: Zip artifact
+        shell: pwsh
+        run: |
+          $zip = "orio-desktop-app-win-x64.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path ".\\publish\\*" -DestinationPath $zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            orio-desktop-app-win-x64.zip

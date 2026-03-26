@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AiInterviewAssistant", "AiInterviewAssistant.csproj", "{A544CB6D-1462-5A4D-0723-D889A22EE2DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A544CB6D-1462-5A4D-0723-D889A22EE2DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A544CB6D-1462-5A4D-0723-D889A22EE2DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A544CB6D-1462-5A4D-0723-D889A22EE2DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A544CB6D-1462-5A4D-0723-D889A22EE2DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD01C448-2656-4327-8E81-803787C5FA8A}
+	EndGlobalSection
+EndGlobal
