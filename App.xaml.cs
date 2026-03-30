@@ -26,7 +26,13 @@ public partial class App : Application
             if (File.Exists(configPath))
             {
                 var json = File.ReadAllText(configPath);
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                // appsettings.json may contain // comments; default System.Text.Json rejects them and would fall back to localhost defaults.
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    AllowTrailingCommas = true
+                };
                 Settings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
                 DesktopLogger.Info($"Loaded appsettings.json. ApiBaseUrl={Settings.ApiBaseUrl} CallSessionId={Settings.CallSessionId} TokenPresent={!string.IsNullOrWhiteSpace(Settings.ApiBearerToken)}");
             }
