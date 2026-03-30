@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -30,7 +31,7 @@ public partial class PastSessionsView : UserControl
     public event Action<StartupWindowSlot>? WindowSlotRequested;
     public event RoutedEventHandler? DashboardRequested;
     public event RoutedEventHandler? LogoutRequested;
-    public event Action<Guid, bool>? ActivateNotActivatedRequested;
+    public event Action<Guid, bool, string?>? ActivateNotActivatedRequested;
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -135,13 +136,15 @@ public partial class PastSessionsView : UserControl
         if (!string.Equals(item.EndsIn?.Trim(), "Not Activated", StringComparison.OrdinalIgnoreCase))
             return;
 
-        ActivateNotActivatedRequested?.Invoke(item.Id, item.IsFreeSession);
+        ActivateNotActivatedRequested?.Invoke(item.Id, item.IsFreeSession, item.Language);
     }
 
     public void ConfigureApiClient(HttpClient apiClient)
     {
         _apiClient = apiClient;
     }
+
+    private const int MaxPastSessionsToShow = 10;
 
     public async Task ReloadSessionsAsync()
     {
@@ -158,7 +161,8 @@ public partial class PastSessionsView : UserControl
                 return;
             }
 
-            var response = await _apiClient.GetAsync("callsessions?page=1&pageSize=10");
+            var response = await _apiClient.GetAsync(
+                $"callsessions?page=1&pageSize={MaxPastSessionsToShow}");
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
@@ -171,6 +175,12 @@ public partial class PastSessionsView : UserControl
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var payload = await response.Content.ReadFromJsonAsync<PagedResult<CallSessionListItem>>(options);
             var items = payload?.Items ?? new List<CallSessionListItem>();
+            // Always cap to latest N by date (defensive if API returns extra rows).
+            items = items
+                .OrderByDescending(i => i.CreatedAt)
+                .Take(MaxPastSessionsToShow)
+                .ToList();
+
             foreach (var item in items)
             {
                 if (string.IsNullOrWhiteSpace(item.Title))
@@ -209,6 +219,7 @@ public partial class PastSessionsView : UserControl
     private sealed class PagedResult<T>
     {
         public List<T> Items { get; set; } = new();
+        public int TotalCount { get; set; }
     }
 
     private sealed class CallSessionListItem

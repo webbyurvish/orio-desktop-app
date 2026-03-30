@@ -35,22 +35,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="MoveSlotBtn" TargetType="Border">
-            <Setter Property="Width" Value="72"/>
-            <Setter Property="Height" Value="56"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Background" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="4"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#EEF2F7"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
         <Style x:Key="SessionRowText" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Foreground" Value="#1F2937"/>
@@ -65,7 +49,8 @@
             Width="520"
             MinHeight="200"
             HorizontalAlignment="Center"
-            VerticalAlignment="Center">
+            VerticalAlignment="Center"
+            Effect="{StaticResource OrioCardDropShadow}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -84,23 +69,23 @@
 
             <Border Grid.Row="1" Padding="10,9,10,10" Background="White" CornerRadius="0,0,20,20">
                 <StackPanel>
-                    <Border Background="#EEF2F8" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="12" Padding="6" Margin="0,0,0,12">
+                    <Border Style="{StaticResource OrioTabSwitcherBarBorder}" Margin="0,0,0,12">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="Transparent" CornerRadius="8" Padding="8,8" Cursor="Hand" MouseLeftButtonDown="CreateTab_Click">
-                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="#334155" FontSize="14" FontWeight="SemiBold"/>
+                            <Border Grid.Column="0" Background="Transparent" CornerRadius="10" Padding="10,9" Cursor="Hand" MouseLeftButtonDown="CreateTab_Click">
+                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="#475569" FontSize="14" FontWeight="SemiBold"/>
                             </Border>
-                            <Border Grid.Column="1" Background="White" CornerRadius="8" BorderBrush="#D6DCE7" BorderThickness="1" Padding="8,8">
-                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="#1F2937" FontSize="14" FontWeight="SemiBold"/>
+                            <Border Grid.Column="1" Background="White" CornerRadius="10" BorderBrush="#818CF8" BorderThickness="1.5" Padding="10,9">
+                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="#312E81" FontSize="14" FontWeight="SemiBold"/>
                             </Border>
                         </Grid>
                     </Border>
 
-                    <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="14" Padding="0">
+                    <Border Style="{StaticResource OrioSessionsListPanelBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -108,10 +93,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0" Margin="12,12,12,8">
+                            <Grid Grid.Row="0" Margin="14,14,14,10">
                                 <TextBlock Text="Session"
-                                           Foreground="#475569"
-                                           FontSize="13"
+                                           Foreground="#312E81"
+                                           FontSize="13.5"
                                            FontWeight="SemiBold"/>
                             </Grid>
 
@@ -156,8 +141,8 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Padding="12,8"
-                                                    BorderBrush="#EEF2F7"
+                                            <Border Padding="14,10"
+                                                    BorderBrush="#E8EDFF"
                                                     BorderThickness="0,0,0,1"
                                                     Background="Transparent"
                                                     Cursor="Hand"
@@ -175,11 +160,11 @@
                                                                Style="{StaticResource SessionRowText}"/>
 
                                                     <Border Grid.Column="1"
-                                                            Background="#2C3456"
-                                                            BorderBrush="#3B4363"
+                                                            Background="#4338CA"
+                                                            BorderBrush="#6366F1"
                                                             BorderThickness="1"
                                                             CornerRadius="11"
-                                                            Padding="8,2"
+                                                            Padding="8,3"
                                                             HorizontalAlignment="Left"
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding Language}"
@@ -248,12 +233,12 @@
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                     </Grid>
                 </Border>
             </Popup>

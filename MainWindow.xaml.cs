@@ -1,11 +1,15 @@
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +17,8 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using NAudio.Wave;
@@ -22,6 +28,100 @@ namespace AiInterviewAssistant;
 
 public partial class MainWindow : Window
 {
+    private enum AudioQuestionSource
+    {
+        Interviewer,
+        SelfMic
+    }
+
+    private static readonly HashSet<string> CodeKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "select","from","where","join","left","right","inner","outer","group","by","order","limit","insert","into","values","update","set","delete","create","table",
+        "if","else","for","foreach","while","return","class","public","private","protected","static","void","string","int","bool","var","new","using","async","await","try","catch","finally","switch","case","break","continue","true","false","null"
+    };
+
+    private static readonly Regex InterviewerQuestionLeadInRegex = new(
+        @"^(what|why|how|when|where|who|whom|which|whose)\b|" +
+        @"^(can|could|would|should|will|do|does|did|is|are|was|were|have|has|had)\s+(you|we|they|i|she|he|it|there|this|that)\b|" +
+        @"^(tell|describe|explain|outline)\s+me\b|" +
+        @"^(walk)\s+me\s+through\b|" +
+        @"^(give|name|list)\s+(me\s+)?(a|an|the|some|three|your)?\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static readonly string AnswerFromTranscriptSystemPrompt =
+        "You are role-playing as the job candidate whose resume is provided in the context. " +
+        "Always answer in FIRST PERSON as that candidate (for example: 'My name is ...', 'I have 5 years of experience ...'). " +
+        "Never say you are an AI or language model. " +
+        "The user will give you text that was transcribed from speech. " +
+        "Answer the question fully and in detail, using the resume details whenever relevant. " +
+        "For questions like 'what is your name' or 'introduce yourself', answer using the candidate's real name and background from the resume.";
+
+    private static string MapSessionLanguageToAzureSpeechLocale(string? sessionLanguage)
+    {
+        var lang = (sessionLanguage ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(lang))
+            return "en-IN";
+
+        // If user already provided a locale (e.g. "hi-IN"), pass through.
+        if (lang.Length == 5 && lang[2] == '-' &&
+            char.IsLetter(lang[0]) && char.IsLetter(lang[1]) &&
+            char.IsLetter(lang[3]) && char.IsLetter(lang[4]))
+        {
+            return lang;
+        }
+
+        return lang.ToLowerInvariant() switch
+        {
+            "english" => "en-IN",
+            "hindi" => "hi-IN",
+            // Common variants / aliases
+            "en" => "en-IN",
+            "hi" => "hi-IN",
+            _ => "en-IN"
+        };
+    }
+
+    private static string GetOutputLanguageNameForPrompt(string? sessionLanguageOrLocale)
+    {
+        var locale = MapSessionLanguageToAzureSpeechLocale(sessionLanguageOrLocale);
+        var prefix = locale.Split('-')[0].ToLowerInvariant();
+        return prefix switch
+        {
+            "en" => "English",
+            "hi" => "Hindi",
+            "bn" => "Bengali",
+            "gu" => "Gujarati",
+            "kn" => "Kannada",
+            "ml" => "Malayalam",
+            "mr" => "Marathi",
+            "pa" => "Punjabi",
+            "ta" => "Tamil",
+            "te" => "Telugu",
+            "ur" => "Urdu",
+            "ar" => "Arabic",
+            "de" => "German",
+            "es" => "Spanish",
+            "fr" => "French",
+            "he" => "Hebrew",
+            "id" => "Indonesian",
+            "it" => "Italian",
+            "ja" => "Japanese",
+            "ko" => "Korean",
+            "ms" => "Malay",
+            "nl" => "Dutch",
+            "pl" => "Polish",
+            "pt" => "Portuguese",
+            "ru" => "Russian",
+            "sw" => "Swahili",
+            "th" => "Thai",
+            "tr" => "Turkish",
+            "uk" => "Ukrainian",
+            "vi" => "Vietnamese",
+            "zh" => "Chinese",
+            "fa" => "Persian",
+            _ => "English"
+        };
+    }
     private sealed class CreateCallSessionRequest
     {
         public string? Title { get; set; }
@@ -85,9 +185,12 @@ public partial class MainWindow : Window
         public string? ResumeContext { get; set; }
     }
 
-    private sealed class DesktopAiAnswerResponse
+    private sealed class DesktopScreenshotAnswerRequest
     {
-        public string Answer { get; set; } = string.Empty;
+        public string? ImageBase64 { get; set; }
+        public string? MimeType { get; set; }
+        public string? SystemPrompt { get; set; }
+        public string? ResumeContext { get; set; }
     }
 
     private sealed class DesktopSpeechTokenResponse
@@ -95,6 +198,21 @@ public partial class MainWindow : Window
         public string Region { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
         public int ExpiresInSeconds { get; set; }
+    }
+
+    private sealed class CallSessionMessageDto
+    {
+        public Guid Id { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
+    private sealed class AnswerHistoryItem
+    {
+        public string? Heading { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public Guid? ServerMessageId { get; set; }
     }
 
     private readonly HttpClient _apiClient;
@@ -105,6 +223,12 @@ public partial class MainWindow : Window
     private RestoreChipWindow? _restoreChip;
     private bool _startupPositionInitialized;
     private readonly DesktopWebAuthService _desktopWebAuthService;
+
+    /// <summary>Live text target while Azure streams tokens; replaced when <see cref="RenderAiAnswer"/> runs.</summary>
+    private Run? _streamingAnswerRun;
+
+    /// <summary>Bold heading shown above the answer (question sent to the user); cleared when answer is cleared.</summary>
+    private string? _currentAnswerDisplayHeading;
     private readonly SemaphoreSlim _loginFlowLock = new(1, 1);
     private readonly object _loginSync = new();
     private CancellationTokenSource? _activeLoginCts;
@@ -122,6 +246,19 @@ public partial class MainWindow : Window
     private int _pendingExtendSyncCount;
     private bool _pendingEndSync;
     private DateTimeOffset _lastServerSyncAttemptUtc;
+
+    private readonly List<AnswerHistoryItem> _sessionAnswerHistory = new();
+    private int _answerHistoryViewIndex = -1;
+    private int _lastAppendedAnswerHistoryIndex = -1;
+    private bool _answerGenerationInFlight;
+    private bool _speechInitInFlight;
+
+    private DispatcherTimer? _callAutoAnswerDebounceTimer;
+    private DispatcherTimer? _micAutoAnswerDebounceTimer;
+    private string _callAutoAnswerBuffer = string.Empty;
+    private string _micAutoAnswerBuffer = string.Empty;
+    private string _lastAutoAnswerNormKey = string.Empty;
+    private DateTimeOffset _lastAutoAnswerUtc = DateTimeOffset.MinValue;
 
     public MainWindow()
     {
@@ -191,10 +328,11 @@ public partial class MainWindow : Window
         SessionSetupView.PastSessionsRequested += (_, _) => ShowPastSessionsView();
         PastSessionsView.CreateRequested += (_, _) => ShowSessionSetupView();
         PastSessionsView.ViewAllRequested += (_, _) => OpenPastSessionsInBrowser();
-        PastSessionsView.ActivateNotActivatedRequested += (sessionId, isFree) =>
+        PastSessionsView.ActivateNotActivatedRequested += (sessionId, isFree, language) =>
         {
             _callSessionId = sessionId;
             _isFreeSessionFlow = isFree;
+            App.Settings.SessionLanguage = language;
             ShowActivateSessionView();
         };
         PastSessionsView.CloseRequested += (_, _) => Close();
@@ -213,7 +351,7 @@ public partial class MainWindow : Window
         CreateSessionStep2View.MinimizeRequested += (_, _) => MinimizeToRestoreChip();
         CreateSessionStep2View.WindowSlotRequested += ApplyStartupWindowSlot;
         ActivateSessionView.BackRequested += (_, _) => ShowCreateSessionStep2View();
-        ActivateSessionView.ActivateRequested += (_, _) => StartInterviewSession();
+        ActivateSessionView.ActivateRequested += (_, _) => StartInterviewSessionAsync();
         ActivateSessionView.CloseRequested += (_, _) => Close();
         ActivateSessionView.MinimizeRequested += (_, _) => MinimizeToRestoreChip();
         ActivateSessionView.WindowSlotRequested += ApplyStartupWindowSlot;
@@ -230,10 +368,52 @@ public partial class MainWindow : Window
 
         // If app is opened via protocol and auth already exists, skip startup/login and go straight to activation.
         NavigateAfterAuthentication(source: "startup");
+
+        SizeChanged += (_, _) => UpdateAiAnswerBodyMaxHeight();
+        LocationChanged += (_, _) => UpdateAiAnswerBodyMaxHeight();
+
+        _callAutoAnswerDebounceTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _callAutoAnswerDebounceTimer.Tick += (_, _) => OnCallAutoAnswerDebounceTick();
+        _micAutoAnswerDebounceTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _micAutoAnswerDebounceTimer.Tick += (_, _) => OnMicAutoAnswerDebounceTick();
     }
 
     /// <summary>
-    /// Hides the main window and shows a small green circle; click the circle to restore (login / app UI).
+    /// Caps the answer host height to the visible desktop below it so the main RichTextBox gets a finite height
+    /// and shows its vertical scrollbar instead of clipping content.
+    /// </summary>
+    private void UpdateAiAnswerBodyMaxHeight()
+    {
+        if (!_mainUiStarted || AnswerSectionPanel.Visibility != Visibility.Visible)
+        {
+            AiAnswerBodyBorder.ClearValue(FrameworkElement.MaxHeightProperty);
+            return;
+        }
+
+        try
+        {
+            var wa = SystemParameters.WorkArea;
+            var topScreen = AiAnswerBodyBorder.PointToScreen(new Point(0, 0));
+            const double bottomPad = 16;
+            var maxH = wa.Bottom - topScreen.Y - bottomPad;
+            if (double.IsNaN(maxH) || double.IsInfinity(maxH))
+                maxH = 360;
+            AiAnswerBodyBorder.MaxHeight = Math.Max(120, maxH);
+        }
+        catch
+        {
+            AiAnswerBodyBorder.MaxHeight = Math.Max(200, Math.Min(520, SystemParameters.WorkArea.Height * 0.55));
+        }
+    }
+
+    /// <summary>
+    /// Hides the main window and shows a small accent circle; click to restore (login / app UI).
     /// </summary>
     private void MinimizeToRestoreChip()
     {
@@ -526,6 +706,9 @@ public partial class MainWindow : Window
             _partialSystem = string.Empty;
             TranscriptTextBlock.Text = string.Empty;
 
+            ResetSessionAnswerHistoryForInterview();
+            ResetAutoAnswerTransientState();
+
             if (Guid.TryParse(App.Settings.CallSessionId, out var sid))
                 _callSessionId = sid;
             else
@@ -648,6 +831,7 @@ public partial class MainWindow : Window
                 SaveTranscript = CreateSessionStep2View.SaveTranscript,
                 IsFreeSession = _isFreeSessionFlow
             };
+            App.Settings.SessionLanguage = payload.Language;
 
             DesktopLogger.Info($"Create session request titleLen={payload.Title?.Length ?? 0} hasResume={payload.ResumeId.HasValue} language={payload.Language} saveTranscript={payload.SaveTranscript} isFreeSession={payload.IsFreeSession}");
             using var response = await _apiClient.PostAsJsonAsync("callsessions", payload);
@@ -717,11 +901,38 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Collapsed;
         MainContentGrid.Visibility = Visibility.Visible;
         SizeToContent = SizeToContent.Height;
-        Width = 560;
-        RootChromeBorder.Background = new SolidColorBrush(Color.FromArgb(0x99, 0x1E, 0x1E, 0x1E));
+        Width = 720;
         RootChromeBorder.Padding = new Thickness(12);
-        RootChromeBorder.CornerRadius = new CornerRadius(12);
-        TrySetDwmBorderColor(0x001E1E1E);
+        RootChromeBorder.CornerRadius = new CornerRadius(14);
+        RootChromeBorder.BorderThickness = new Thickness(1);
+        Opacity = 1.0;
+        ApplyChromeTranslucencyFromSlider();
+        TrySetDwmBorderColor(0x00ECE7E5);
+    }
+
+    /// <summary>
+    /// Translucency is applied only to chrome backgrounds (alpha on brushes). Window.Opacity is kept at 1 so
+    /// answer text, code, and syntax colors stay fully readable.
+    /// </summary>
+    private void ApplyChromeTranslucencyFromSlider()
+    {
+        if (!_mainUiStarted || RootChromeBorder == null) return;
+
+        var pct = WindowOpacitySlider?.Value ?? 90;
+        var t = Math.Clamp((pct - 55.0) / 45.0, 0, 1);
+        // More transparent panel at low slider, stronger dim at high end (55% .. 100%).
+        byte bgA = (byte)Math.Round(40 + t * (210 - 40));
+        byte borderA = (byte)Math.Round(36 + t * (160 - 36));
+
+        RootChromeBorder.Background = new SolidColorBrush(Color.FromArgb(bgA, 0x00, 0x00, 0x00));
+        RootChromeBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(borderA, 0xFF, 0xFF, 0xFF));
+    }
+
+    private void WindowOpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_mainUiStarted) return;
+        Opacity = 1.0;
+        ApplyChromeTranslucencyFromSlider();
     }
 
     private void TrySetDwmBorderColor(int colorRefBgr)
@@ -735,21 +946,33 @@ public partial class MainWindow : Window
         catch { /* ignore if DWM attribute not supported */ }
     }
 
-    private void StartMainUiIfNeeded()
+    private async Task StartMainUiIfNeededAsync()
     {
         if (_mainUiStarted) return;
         _mainUiStarted = true;
         ApplyMainChrome();
-        InitializeSpeechAsync().ConfigureAwait(false);
+        await EnsureSpeechConfiguredAsync().ConfigureAwait(true);
         if (_resumeId.HasValue)
         {
             _ = LoadResumeContextAsync(_resumeId.Value);
         }
     }
 
-    private void StartInterviewSession()
+    private async void StartInterviewSessionAsync()
     {
-        StartMainUiIfNeeded();
+        await StartMainUiIfNeededAsync().ConfigureAwait(true);
+        await EnsureSpeechConfiguredAsync().ConfigureAwait(true);
+        ResetSessionAnswerHistoryForInterview();
+        ResetAutoAnswerTransientState();
+        try
+        {
+            await LoadAssistantAnswerHistoryFromServerAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            DesktopLogger.Warn($"StartInterviewSessionAsync history load: {ex.Message}");
+        }
+
         _activeSessionIsFree = _isFreeSessionFlow;
         _sessionStartUtc = DateTimeOffset.UtcNow;
         _nextFullExtensionUtc = _sessionStartUtc.AddMinutes(30);
@@ -777,6 +1000,152 @@ public partial class MainWindow : Window
 
         var mode = _activeSessionIsFree ? "Free" : "Full";
         StatusTextBlock.Text = $"Session started ({mode}).";
+    }
+
+    private void ResetSessionAnswerHistoryForInterview()
+    {
+        _sessionAnswerHistory.Clear();
+        _answerHistoryViewIndex = -1;
+        _lastAppendedAnswerHistoryIndex = -1;
+        if (Dispatcher.CheckAccess())
+            UpdateAnswerHistoryNav();
+        else
+            _ = Dispatcher.InvokeAsync(UpdateAnswerHistoryNav);
+    }
+
+    private async Task LoadAssistantAnswerHistoryFromServerAsync()
+    {
+        if (_callSessionId == Guid.Empty) return;
+
+        using var res = await _apiClient.GetAsync($"callsessions/{_callSessionId}/messages").ConfigureAwait(false);
+        if (!res.IsSuccessStatusCode)
+        {
+            DesktopLogger.Warn($"GET callsessions/messages failed status={(int)res.StatusCode}");
+            return;
+        }
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var messages = await res.Content.ReadFromJsonAsync<List<CallSessionMessageDto>>(options).ConfigureAwait(false);
+        if (messages == null) return;
+
+        var items = messages
+            .Where(m => string.Equals(m.Role, "Assistant", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(m => m.CreatedAt)
+            .Select(m => new AnswerHistoryItem
+            {
+                Heading = null,
+                Content = m.Content ?? string.Empty,
+                ServerMessageId = m.Id
+            })
+            .ToList();
+
+        await Dispatcher.InvokeAsync(() =>
+        {
+            _sessionAnswerHistory.Clear();
+            foreach (var it in items)
+                _sessionAnswerHistory.Add(it);
+            _answerHistoryViewIndex = items.Count > 0 ? items.Count - 1 : -1;
+            _lastAppendedAnswerHistoryIndex = -1;
+            UpdateAnswerHistoryNav();
+        });
+    }
+
+    private void UpdateAnswerHistoryNav()
+    {
+        if (AnswerHistoryPrevButton == null || AnswerHistoryNextButton == null || AnswerHistoryPositionText == null)
+            return;
+
+        var panelVisible = FindName("AnswerSectionPanel") is System.Windows.UIElement pan && pan.Visibility == Visibility.Visible;
+        var n = _sessionAnswerHistory.Count;
+        var showChrome = panelVisible && n > 1;
+
+        AnswerHistoryPrevButton.Visibility = showChrome ? Visibility.Visible : Visibility.Collapsed;
+        AnswerHistoryNextButton.Visibility = showChrome ? Visibility.Visible : Visibility.Collapsed;
+        AnswerHistoryPositionText.Visibility = showChrome ? Visibility.Visible : Visibility.Collapsed;
+
+        if (!showChrome)
+            return;
+
+        var idx = n == 0 ? -1 : Math.Clamp(_answerHistoryViewIndex, 0, n - 1);
+        AnswerHistoryPositionText.Text = $"{idx + 1} / {n}";
+        AnswerHistoryPrevButton.IsEnabled = idx > 0 && !_answerGenerationInFlight;
+        AnswerHistoryNextButton.IsEnabled = idx < n - 1 && !_answerGenerationInFlight;
+    }
+
+    private void RegisterSuccessfulAnswerInHistory(string? completion)
+    {
+        if (string.IsNullOrWhiteSpace(completion))
+            return;
+
+        _sessionAnswerHistory.Add(new AnswerHistoryItem
+        {
+            Heading = _currentAnswerDisplayHeading,
+            Content = completion,
+            ServerMessageId = null
+        });
+        _lastAppendedAnswerHistoryIndex = _sessionAnswerHistory.Count - 1;
+        _answerHistoryViewIndex = _lastAppendedAnswerHistoryIndex;
+    }
+
+    private void ApplyAnswerHistoryView()
+    {
+        if (_answerHistoryViewIndex < 0 || _answerHistoryViewIndex >= _sessionAnswerHistory.Count)
+            return;
+
+        var item = _sessionAnswerHistory[_answerHistoryViewIndex];
+        RenderAiAnswer(item.Content, item.Heading);
+        try
+        {
+            AiAnswerTextBlock.ScrollToHome();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        UpdateAiAnswerBodyMaxHeight();
+        UpdateAnswerHistoryNav();
+    }
+
+    private void AnswerHistoryPrev_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (_answerGenerationInFlight || _sessionAnswerHistory.Count == 0) return;
+        if (_answerHistoryViewIndex <= 0) return;
+        _answerHistoryViewIndex--;
+        ApplyAnswerHistoryView();
+    }
+
+    private void AnswerHistoryNext_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (_answerGenerationInFlight || _sessionAnswerHistory.Count == 0) return;
+        if (_answerHistoryViewIndex >= _sessionAnswerHistory.Count - 1) return;
+        _answerHistoryViewIndex++;
+        ApplyAnswerHistoryView();
+    }
+
+    private async Task AttachServerIdToAppendedAssistantAsync()
+    {
+        try
+        {
+            var idx = _lastAppendedAnswerHistoryIndex;
+            if (idx < 0 || idx >= _sessionAnswerHistory.Count) return;
+
+            var content = _sessionAnswerHistory[idx].Content;
+            var id = await LogMessageAsync("Assistant", content).ConfigureAwait(false);
+            if (!id.HasValue) return;
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (idx >= 0 && idx < _sessionAnswerHistory.Count && string.Equals(_sessionAnswerHistory[idx].Content, content, StringComparison.Ordinal))
+                    _sessionAnswerHistory[idx].ServerMessageId = id;
+            });
+        }
+        catch (Exception ex)
+        {
+            DesktopLogger.Warn($"AttachServerIdToAppendedAssistantAsync: {ex.Message}");
+        }
     }
 
     private async Task<bool> ActivateCallSessionOnServerAsync()
@@ -901,6 +1270,9 @@ public partial class MainWindow : Window
             _partialSystem = string.Empty;
             TranscriptTextBlock.Text = string.Empty;
 
+            ResetSessionAnswerHistoryForInterview();
+            ResetAutoAnswerTransientState();
+
             StatusTextBlock.Text = reason;
             ShowSessionSetupView();
         }
@@ -936,10 +1308,46 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task InitializeSpeechAsync()
+    private async Task EnsureSpeechConfiguredAsync()
+    {
+        if (_speechInitInFlight)
+            return;
+
+        var hasMic = _speechRecognizer != null && _isListening;
+        var hasSystem = _systemSpeechRecognizer != null;
+        if (hasMic && hasSystem)
+            return;
+
+        _speechInitInFlight = true;
+        try
+        {
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                var ok = await InitializeSpeechAsync().ConfigureAwait(false);
+                if (ok)
+                    return;
+
+                await Task.Delay(220).ConfigureAwait(false);
+            }
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                StatusTextBlock.Text = "Speech setup failed. Check Azure Speech key/region or server token endpoint.";
+            });
+        }
+        finally
+        {
+            _speechInitInFlight = false;
+        }
+    }
+
+    private async Task<bool> InitializeSpeechAsync()
     {
         try
         {
+            if (_speechRecognizer != null || _systemSpeechRecognizer != null || _loopbackCapture != null)
+                await StopSpeechSessionAsync().ConfigureAwait(false);
+
             var s = App.Settings.AzureSpeech;
             SpeechConfig config;
             if (!string.IsNullOrWhiteSpace(s.Key) && !string.IsNullOrWhiteSpace(s.Region))
@@ -948,19 +1356,19 @@ public partial class MainWindow : Window
             }
             else
             {
-                var tokenInfo = await GetServerSpeechTokenAsync();
+                var tokenInfo = await GetServerSpeechTokenAsync().ConfigureAwait(false);
                 if (tokenInfo == null || string.IsNullOrWhiteSpace(tokenInfo.Token) || string.IsNullOrWhiteSpace(tokenInfo.Region))
                 {
-                    Dispatcher.Invoke(() =>
+                    await Dispatcher.InvokeAsync(() =>
                     {
                         StatusTextBlock.Text = "Speech is not configured (local or server).";
                     });
-                    return;
+                    return false;
                 }
                 config = SpeechConfig.FromAuthorizationToken(tokenInfo.Token, tokenInfo.Region);
             }
             config.SetProperty("SPEECH-EndpointSilenceTimeoutMs", s.EndpointSilenceTimeoutMs);
-            config.SpeechRecognitionLanguage = "en-US";
+            config.SpeechRecognitionLanguage = MapSessionLanguageToAzureSpeechLocale(App.Settings.SessionLanguage);
 
             // 1) Microphone recognizer
             var micAudioConfig = AudioConfig.FromDefaultMicrophoneInput();
@@ -985,8 +1393,9 @@ public partial class MainWindow : Window
                         var text = (e.Result.Text ?? string.Empty).Trim();
                         if (!string.IsNullOrWhiteSpace(text))
                         {
-                            AppendFinalLine($"Me: {text}");
+                            AppendTranscriptPlain(text);
                             _ = LogMessageAsync("User", text);
+                            ScheduleMicAutoAnswer(text);
                         }
                         _partialMic = string.Empty;
                         UpdateTranscriptDisplay();
@@ -1014,20 +1423,23 @@ public partial class MainWindow : Window
             await _speechRecognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
             _isListening = true;
 
-            Dispatcher.Invoke(() =>
+            await Dispatcher.InvokeAsync(() =>
             {
                 StatusTextBlock.Text = "Listening...";
             });
 
             // 2) System audio (loopback) recognizer
             await InitializeSystemAudioSpeechAsync(config).ConfigureAwait(false);
+            return _speechRecognizer != null && _isListening;
         }
         catch (Exception ex)
         {
-            Dispatcher.Invoke(() =>
+            await Dispatcher.InvokeAsync(() =>
             {
                 StatusTextBlock.Text = $"Speech init error: {ex.Message}";
             });
+            DesktopLogger.Warn($"InitializeSpeechAsync failed: {ex.Message}");
+            return false;
         }
     }
 
@@ -1101,8 +1513,9 @@ public partial class MainWindow : Window
                         var text = (e.Result.Text ?? string.Empty).Trim();
                         if (!string.IsNullOrWhiteSpace(text))
                         {
-                            AppendFinalLine($"Call: {text}");
+                            AppendTranscriptPlain(text);
                             _ = LogMessageAsync("System", text);
+                            ScheduleInterviewerAutoAnswer(text);
                         }
                         _partialSystem = string.Empty;
                         UpdateTranscriptDisplay();
@@ -1205,19 +1618,20 @@ public partial class MainWindow : Window
         return outPcm;
     }
 
-    private void AppendFinalLine(string line)
+    /// <summary>Appends recognized speech to the live transcript UI as plain flowing text (no Me:/Call: labels). Server logs still use roles via <see cref="LogMessageAsync"/>.</summary>
+    private void AppendTranscriptPlain(string text)
     {
+        var t = (text ?? string.Empty).Trim();
+        if (t.Length == 0) return;
+
         if (_finalTranscript.Length > 0)
-            _finalTranscript.AppendLine();
+            _finalTranscript.Append(' ');
+        _finalTranscript.Append(t);
 
-        _finalTranscript.Append(line);
-
-        // Keep transcript from growing without bound in UI
         const int maxChars = 6000;
         if (_finalTranscript.Length > maxChars)
         {
-            var trimmed = _finalTranscript.ToString();
-            trimmed = trimmed[^maxChars..];
+            var trimmed = _finalTranscript.ToString()[^maxChars..].TrimStart();
             _finalTranscript.Clear();
             _finalTranscript.Append(trimmed);
         }
@@ -1225,23 +1639,26 @@ public partial class MainWindow : Window
 
     private void UpdateTranscriptDisplay()
     {
-        // Show final lines plus latest partial from mic/system (if any)
         var sb = new StringBuilder();
         sb.Append(_finalTranscript);
 
-        var partials = new StringBuilder();
-        if (!string.IsNullOrWhiteSpace(_partialMic))
-            partials.Append($"Me (partial): {_partialMic}");
-        if (!string.IsNullOrWhiteSpace(_partialSystem))
+        void appendSpaceIfNeeded()
         {
-            if (partials.Length > 0) partials.AppendLine();
-            partials.Append($"Call (partial): {_partialSystem}");
+            if (sb.Length == 0) return;
+            if (char.IsWhiteSpace(sb[^1])) return;
+            sb.Append(' ');
         }
 
-        if (partials.Length > 0)
+        if (!string.IsNullOrWhiteSpace(_partialMic))
         {
-            if (sb.Length > 0) sb.AppendLine().AppendLine();
-            sb.Append(partials);
+            appendSpaceIfNeeded();
+            sb.Append(_partialMic.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(_partialSystem))
+        {
+            appendSpaceIfNeeded();
+            sb.Append(_partialSystem.Trim());
         }
 
         TranscriptTextBlock.Text = sb.ToString();
@@ -1272,8 +1689,10 @@ public partial class MainWindow : Window
         style &= ~WS_BORDER;
         SetWindowLong(handle, GWL_STYLE, style);
 
-        // DWM border: light on startup screen, dark after login (also updated in ApplyMainChrome).
-        TrySetDwmBorderColor(_mainUiStarted ? 0x001E1E1E : 0x00FBF7F6);
+        // DWM border: light in both startup and main UI.
+        TrySetDwmBorderColor(_mainUiStarted ? 0x00ECE7E5 : 0x00FBF7F6);
+
+        UpdateAiAnswerBodyMaxHeight();
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1291,7 +1710,7 @@ public partial class MainWindow : Window
 
     private void HideButton_Click(object sender, RoutedEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        MinimizeToRestoreChip();
     }
 
     private async void MicToggleButton_Click(object sender, RoutedEventArgs e)
@@ -1304,8 +1723,12 @@ public partial class MainWindow : Window
             {
                 await _speechRecognizer.StartContinuousRecognitionAsync();
                 _isListening = true;
-                MicToggleButton.Content = "Mic On";
-                MicToggleButton.Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x53, 0x5A, 0x65));
+                MicToggleButton.Content = "\uE720";
+                MicToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
+                MicToggleButton.ToolTip = "Microphone on";
+                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
+                MicToggleButton.Foreground = new SolidColorBrush(Colors.White);
+                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x05, 0x96, 0x69));
                 StatusTextBlock.Text = "Mic on.";
             }
             else
@@ -1314,8 +1737,12 @@ public partial class MainWindow : Window
                 _isListening = false;
                 _partialMic = string.Empty;
                 UpdateTranscriptDisplay();
-                MicToggleButton.Content = "Mic Off";
-                MicToggleButton.Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x39, 0x39, 0x39));
+                MicToggleButton.Content = "\uE720";
+                MicToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
+                MicToggleButton.ToolTip = "Microphone off";
+                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x27, 0x2A));
+                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
+                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
                 StatusTextBlock.Text = "Mic off.";
             }
         }
@@ -1334,8 +1761,12 @@ public partial class MainWindow : Window
             if (_speakerOn)
             {
                 StartLoopbackCapture();
-                SpeakerToggleButton.Content = "Speaker On";
-                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x53, 0x5A, 0x65));
+                SpeakerToggleButton.Content = "\uE767";
+                SpeakerToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
+                SpeakerToggleButton.ToolTip = "Computer audio (speaker) on";
+                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0xA5, 0xE9));
+                SpeakerToggleButton.Foreground = new SolidColorBrush(Colors.White);
+                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x02, 0x84, 0xC7));
                 StatusTextBlock.Text = "Speaker (computer audio) on.";
             }
             else
@@ -1345,8 +1776,12 @@ public partial class MainWindow : Window
                 _loopbackCapture = null;
                 _partialSystem = string.Empty;
                 UpdateTranscriptDisplay();
-                SpeakerToggleButton.Content = "Speaker Off";
-                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x39, 0x39, 0x39));
+                SpeakerToggleButton.Content = "\uE74F";
+                SpeakerToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
+                SpeakerToggleButton.ToolTip = "Computer audio (speaker) off";
+                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x27, 0x2A));
+                SpeakerToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
+                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
                 StatusTextBlock.Text = "Speaker off.";
             }
         }
@@ -1367,20 +1802,23 @@ public partial class MainWindow : Window
             return;
         }
 
-        var question = QuestionTextBox.Text?.Trim();
-        // Treat transcript as the user's question; optional typed question adds context
-        string userContent = string.IsNullOrWhiteSpace(question)
-            ? $"Answer this question (from voice transcription): {transcript}"
-            : $"Answer this question. Context from user: {question}. What they said: {transcript}";
+        var latestQuestion = GetLatestQuestionFromTranscript(transcript);
+        if (string.IsNullOrWhiteSpace(latestQuestion))
+        {
+            StatusTextBlock.Text = "Transcript is empty. Speak or paste text first.";
+            return;
+        }
 
-        const string answerFromTranscriptPrompt =
-            "You are role-playing as the job candidate whose resume is provided in the context. " +
-            "Always answer in FIRST PERSON as that candidate (for example: 'My name is ...', 'I have 5 years of experience ...'). " +
-            "Never say you are an AI or language model. " +
-            "The user will give you text that was transcribed from speech. " +
-            "Answer the question fully and in detail, using the resume details whenever relevant. " +
-            "For questions like 'what is your name' or 'introduce yourself', answer using the candidate's real name and background from the resume.";
-        await GetAnswerAsync(userContent, answerFromTranscriptPrompt);
+        var question = QuestionTextBox.Text?.Trim();
+        // Only the latest transcribed question is sent (not earlier questions in the same line).
+        string userContent = string.IsNullOrWhiteSpace(question)
+            ? $"Answer this question (from voice transcription): {latestQuestion}"
+            : $"Answer this question. Context from user: {question}. Latest transcribed question: {latestQuestion}";
+
+        var headingForUi = string.IsNullOrWhiteSpace(question)
+            ? SummarizeForAnswerHeading(latestQuestion)
+            : question.Trim();
+        await GetAnswerAsync(userContent, AnswerFromTranscriptSystemPrompt, headingForUi);
     }
 
     private async void AskButton_Click(object sender, RoutedEventArgs e)
@@ -1393,7 +1831,307 @@ public partial class MainWindow : Window
             return;
         }
 
-        await GetAnswerAsync(question, _systemPrompt);
+        await GetAnswerAsync(question, _systemPrompt, question.Trim());
+    }
+
+    /// <summary>Single-line style label for answer header when the “question” is long transcript text.</summary>
+    private static string SummarizeForAnswerHeading(string text)
+    {
+        var t = (text ?? string.Empty).Trim().Replace("\r\n", " ").Replace("\n", " ");
+        while (t.Contains("  ", StringComparison.Ordinal))
+            t = t.Replace("  ", " ");
+        if (t.Length > 220)
+            return t[..220].TrimEnd() + "…";
+        return t;
+    }
+
+    /// <summary>Splits auto-detected transcript into separate question units (primarily on '?').</summary>
+    private static List<string> SplitTranscriptIntoQuestionSegments(string text)
+    {
+        var t = (text ?? string.Empty).Trim();
+        var list = new List<string>();
+        if (t.Length == 0) return list;
+
+        var parts = t.Split('?');
+        for (var i = 0; i < parts.Length - 1; i++)
+        {
+            var s = parts[i].Trim();
+            if (s.Length > 0)
+                list.Add(s + "?");
+        }
+
+        var tail = parts[^1].Trim();
+        if (tail.Length > 0)
+        {
+            if (IsObviousNonQuestionChatter(tail) && tail.Length < 24 && list.Count > 0)
+            {
+                // Drop trailing "ok / thanks" after real questions
+            }
+            else
+            {
+                list.Add(tail);
+            }
+        }
+
+        if (list.Count == 0)
+            list.Add(t);
+        return list;
+    }
+
+    /// <summary>Latest transcribed question only (last segment after splitting on '?'), for manual AI Answer.</summary>
+    private static string GetLatestQuestionFromTranscript(string transcript)
+    {
+        var t = (transcript ?? string.Empty).Trim();
+        if (t.Length == 0) return string.Empty;
+        var segments = SplitTranscriptIntoQuestionSegments(t);
+        return segments.Count == 0 ? t : segments[^1].Trim();
+    }
+
+    private static string BuildAutoAnswerPromptFromSegments(string prefix, IReadOnlyList<string> segments)
+    {
+        if (segments.Count == 0)
+            return prefix;
+        if (segments.Count == 1)
+            return $"{prefix}\n\n{segments[0]}";
+
+        var sb = new StringBuilder();
+        sb.Append(prefix);
+        sb.Append(
+            "\n\nMultiple questions were detected in the transcription. Answer each one clearly; start each answer with the matching number (1., 2., 3., …).\n\n");
+        for (var i = 0; i < segments.Count; i++)
+            sb.AppendLine($"{i + 1}) {segments[i]}");
+        return sb.ToString();
+    }
+
+    private static string FormatSplitQuestionsForAnswerHeading(IReadOnlyList<string> segments)
+    {
+        if (segments.Count == 0) return string.Empty;
+        if (segments.Count == 1)
+            return SummarizeForAnswerHeading(segments[0]);
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < segments.Count; i++)
+        {
+            var line = SummarizeForAnswerHeading(segments[i]);
+            if (sb.Length > 0) sb.AppendLine();
+            sb.Append($"{i + 1}. {line}");
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendBoldQuestionHeading(FlowDocument doc, string? boldHeading)
+    {
+        if (string.IsNullOrWhiteSpace(boldHeading)) return;
+
+        var lines = boldHeading.Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n', StringSplitOptions.None);
+        var nonEmpty = new List<string>();
+        foreach (var raw in lines)
+        {
+            var s = raw.Trim();
+            if (s.Length > 0)
+                nonEmpty.Add(s);
+        }
+
+        for (var i = 0; i < nonEmpty.Count; i++)
+        {
+            var bottom = i == nonEmpty.Count - 1 ? 10 : 4;
+            doc.Blocks.Add(new Paragraph(new Run(nonEmpty[i])
+            {
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White
+            })
+            {
+                Margin = new Thickness(0, 0, 0, bottom)
+            });
+        }
+    }
+
+    private void AutoAnswerToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (AutoAnswerToggle?.IsChecked != true)
+            ResetAutoAnswerDebounceBuffersOnly();
+    }
+
+    private void ResetAutoAnswerDebounceBuffersOnly()
+    {
+        _callAutoAnswerBuffer = string.Empty;
+        _micAutoAnswerBuffer = string.Empty;
+        _callAutoAnswerDebounceTimer?.Stop();
+        _micAutoAnswerDebounceTimer?.Stop();
+    }
+
+    private void ResetAutoAnswerTransientState()
+    {
+        ResetAutoAnswerDebounceBuffersOnly();
+        _lastAutoAnswerNormKey = string.Empty;
+        _lastAutoAnswerUtc = DateTimeOffset.MinValue;
+    }
+
+    private void OnCallAutoAnswerDebounceTick()
+    {
+        _callAutoAnswerDebounceTimer?.Stop();
+        var q = _callAutoAnswerBuffer.Trim();
+        _callAutoAnswerBuffer = string.Empty;
+        if (string.IsNullOrWhiteSpace(q)) return;
+        _ = TryRunAutoAnswerFromTranscriptAsync(q, AudioQuestionSource.Interviewer);
+    }
+
+    private void OnMicAutoAnswerDebounceTick()
+    {
+        _micAutoAnswerDebounceTimer?.Stop();
+        var q = _micAutoAnswerBuffer.Trim();
+        _micAutoAnswerBuffer = string.Empty;
+        if (string.IsNullOrWhiteSpace(q)) return;
+        _ = TryRunAutoAnswerFromTranscriptAsync(q, AudioQuestionSource.SelfMic);
+    }
+
+    private void ScheduleInterviewerAutoAnswer(string fragment)
+    {
+        if (AutoAnswerToggle?.IsChecked != true) return;
+        if (!_sessionActive || !_mainUiStarted) return;
+
+        var piece = (fragment ?? string.Empty).Trim();
+        if (piece.Length == 0) return;
+
+        if (LooksLikeInterviewerQuestion(piece))
+        {
+            _callAutoAnswerBuffer = string.Empty;
+            _callAutoAnswerDebounceTimer?.Stop();
+            _ = TryRunAutoAnswerFromTranscriptAsync(piece, AudioQuestionSource.Interviewer);
+            return;
+        }
+
+        _callAutoAnswerBuffer = string.IsNullOrEmpty(_callAutoAnswerBuffer)
+            ? piece
+            : $"{_callAutoAnswerBuffer} {piece}";
+        _callAutoAnswerDebounceTimer?.Stop();
+        _callAutoAnswerDebounceTimer?.Start();
+    }
+
+    private void ScheduleMicAutoAnswer(string fragment)
+    {
+        if (AutoAnswerToggle?.IsChecked != true) return;
+        if (!_sessionActive || !_mainUiStarted) return;
+
+        var piece = (fragment ?? string.Empty).Trim();
+        if (piece.Length == 0) return;
+
+        if (LooksLikeMicQuestion(piece))
+        {
+            _micAutoAnswerBuffer = string.Empty;
+            _micAutoAnswerDebounceTimer?.Stop();
+            _ = TryRunAutoAnswerFromTranscriptAsync(piece, AudioQuestionSource.SelfMic);
+            return;
+        }
+
+        _micAutoAnswerBuffer = string.IsNullOrEmpty(_micAutoAnswerBuffer)
+            ? piece
+            : $"{_micAutoAnswerBuffer} {piece}";
+        _micAutoAnswerDebounceTimer?.Stop();
+        _micAutoAnswerDebounceTimer?.Start();
+    }
+
+    private static string NormalizeForAutoAnswerDedup(string s)
+    {
+        var t = (s ?? string.Empty).Trim().ToLowerInvariant();
+        while (t.Contains("  ", StringComparison.Ordinal))
+            t = t.Replace("  ", " ");
+        return t.TrimEnd('.', '!', '?', ',', ';', ':');
+    }
+
+    private static bool IsObviousNonQuestionChatter(string t)
+    {
+        var lower = t.Trim().ToLowerInvariant();
+        if (lower.Length <= 22 && !t.Contains('?'))
+        {
+            if (lower is "ok" or "okay" or "yes" or "yeah" or "yep" or "no" or "nope" or "thank you" or "thanks"
+                or "got it" or "sure" or "right" or "alright" or "sounds good" or "mm-hmm" or "uh-huh")
+                return true;
+        }
+        return false;
+    }
+
+    private static bool LooksLikeInterviewerQuestion(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length < 10) return false;
+        var t = text.Trim();
+        if (IsObviousNonQuestionChatter(t)) return false;
+
+        if (t.Contains('?')) return true;
+
+        return InterviewerQuestionLeadInRegex.IsMatch(t);
+    }
+
+    private static bool LooksLikeMicQuestion(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length < 10) return false;
+        var t = text.Trim();
+        if (IsObviousNonQuestionChatter(t)) return false;
+
+        if (t.Contains('?')) return true;
+
+        var words = t.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        if (words < 5) return false;
+        if (t.StartsWith("what i ", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return InterviewerQuestionLeadInRegex.IsMatch(t);
+    }
+
+    private async Task TryRunAutoAnswerFromTranscriptAsync(string questionText, AudioQuestionSource source)
+    {
+        try
+        {
+            if (AutoAnswerToggle?.IsChecked != true) return;
+            if (!_sessionActive || !_mainUiStarted) return;
+            if (_answerGenerationInFlight) return;
+
+            var trimmed = questionText.Trim();
+            if (trimmed.Length < 12) return;
+
+            var wordCount = trimmed.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+            if (wordCount < 3) return;
+
+            var looks = source == AudioQuestionSource.Interviewer
+                ? LooksLikeInterviewerQuestion(trimmed)
+                : LooksLikeMicQuestion(trimmed);
+            if (!looks) return;
+
+            var norm = NormalizeForAutoAnswerDedup(trimmed);
+            if (norm.Length < 8) return;
+
+            var now = DateTimeOffset.UtcNow;
+            if (string.Equals(norm, _lastAutoAnswerNormKey, StringComparison.Ordinal)
+                && (now - _lastAutoAnswerUtc).TotalSeconds < 40)
+                return;
+            if ((now - _lastAutoAnswerUtc).TotalSeconds < 1.15)
+                return;
+
+            _lastAutoAnswerNormKey = norm;
+            _lastAutoAnswerUtc = now;
+
+            DesktopLogger.Info($"Auto answer ({source}) len={trimmed.Length}");
+            StatusTextBlock.Text = source == AudioQuestionSource.Interviewer
+                ? "Auto answer: interviewer question detected..."
+                : "Auto answer: question detected on mic...";
+
+            await IncrementAiUsageAsync();
+
+            var prefix = source == AudioQuestionSource.Interviewer
+                ? "Answer this question (transcribed from the interviewer's audio). Focus only on the question(s) below:"
+                : "Answer this question (transcribed from your microphone). Focus only on the question(s) below:";
+            var segments = SplitTranscriptIntoQuestionSegments(trimmed);
+            var userContent = BuildAutoAnswerPromptFromSegments(prefix, segments);
+            var headingForUi = FormatSplitQuestionsForAnswerHeading(segments);
+
+            await GetAnswerAsync(userContent, AnswerFromTranscriptSystemPrompt, headingForUi);
+        }
+        catch (Exception ex)
+        {
+            DesktopLogger.Warn($"TryRunAutoAnswerFromTranscriptAsync: {ex.Message}");
+        }
     }
 
     private async Task IncrementAiUsageAsync()
@@ -1417,6 +2155,7 @@ public partial class MainWindow : Window
         _partialMic = string.Empty;
         _partialSystem = string.Empty;
         TranscriptTextBlock.Text = string.Empty;
+        ResetAutoAnswerTransientState();
     }
 
     private void QuestionClearButton_Click(object sender, RoutedEventArgs e)
@@ -1427,82 +2166,421 @@ public partial class MainWindow : Window
     private void CloseAnswerButton_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
-        AiAnswerTextBlock.Text = string.Empty;
+        ClearAiAnswer();
         if (FindName("AnswerSectionPanel") is System.Windows.UIElement panel)
         {
             panel.Visibility = Visibility.Collapsed;
             SetAnswerSectionRowHeight(collapsed: true);
         }
+
+        UpdateAiAnswerBodyMaxHeight();
+        UpdateAnswerHistoryNav();
     }
 
     private void SetAnswerSectionRowHeight(bool collapsed)
     {
-        if (FindName("MainContentGrid") is System.Windows.Controls.Grid grid && grid.RowDefinitions.Count > 3)
+        if (FindName("MainContentGrid") is System.Windows.Controls.Grid grid
+            && FindName("AnswerSectionPanel") is UIElement answerPanel)
         {
-            grid.RowDefinitions[3].Height = collapsed
+            var idx = System.Windows.Controls.Grid.GetRow(answerPanel);
+            if (idx >= 0 && idx < grid.RowDefinitions.Count)
+            {
+                grid.RowDefinitions[idx].Height = collapsed
                 ? new System.Windows.GridLength(1, System.Windows.GridUnitType.Auto)
                 : new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
+            }
         }
     }
 
-    private async Task GetAnswerAsync(string userContent, string? systemPrompt = null)
+    private string ComposeExtendedSystemPrompt(string? systemPrompt)
+    {
+        var basePrompt = string.IsNullOrWhiteSpace(systemPrompt) ? _systemPrompt : systemPrompt;
+        var outputLanguage = GetOutputLanguageNameForPrompt(App.Settings.SessionLanguage);
+        return basePrompt +
+               "\n\nYou are role-playing as the job candidate described in the resume. " +
+               "Always answer in FIRST PERSON as that candidate. " +
+               "Never mention that you are an AI, assistant, or language model. " +
+               "Use the resume details (name, experience, skills, education) to answer questions such as 'What is your name?' or 'Introduce yourself' as the candidate." +
+               $"\n\nLANGUAGE: Respond in {outputLanguage}. If you include code, keep code keywords/identifiers in their original language (usually English), but explain in {outputLanguage}." +
+               "\n\nRESPONSE FORMAT RULES (VERY IMPORTANT):" +
+               "\n1) Always answer in clear numbered points (1., 2., 3.) suitable for interview speaking." +
+               "\n2) Keep language interview-friendly, concise, and confident." +
+               "\n3) If code/query is needed, put it in fenced code blocks using triple backticks and language tag (```sql, ```csharp, ```javascript, etc.)." +
+               "\n4) In code/query blocks, add short inline comments to explain key lines so the user can explain each line to the interviewer." +
+               "\n5) For non-code answers, still keep point-by-point structure and include a short 'How to say this in interview' line at the end.";
+    }
+
+    private async Task GetAnswerAsync(string userContent, string? systemPrompt = null, string? displayQuestionForUi = null)
+    {
+        var payload = new DesktopAiAnswerRequest
+        {
+            UserContent = userContent,
+            SystemPrompt = ComposeExtendedSystemPrompt(systemPrompt),
+            ResumeContext = _resumeContext
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "desktop/ai/answer-stream")
+        {
+            Content = JsonContent.Create(payload)
+        };
+
+        await ExecuteAnswerStreamCoreAsync(request, displayQuestionForUi).ConfigureAwait(false);
+    }
+
+    private async Task ExecuteAnswerStreamCoreAsync(
+        HttpRequestMessage request,
+        string? displayQuestionForUi,
+        string connectingMessage = "Connecting to AI...",
+        string generatingMessage = "Generating answer...")
     {
         try
         {
-            AiAnswerButton.IsEnabled = false;
-            AskButton.IsEnabled = false;
-            StatusTextBlock.Text = "Thinking (server AI)...";
+            _currentAnswerDisplayHeading = string.IsNullOrWhiteSpace(displayQuestionForUi)
+                ? null
+                : displayQuestionForUi.Trim();
 
-            var basePrompt = string.IsNullOrWhiteSpace(systemPrompt) ? _systemPrompt : systemPrompt;
-            // Ensure the model always speaks as the candidate, not as an AI assistant.
-            basePrompt +=
-                "\n\nYou are role-playing as the job candidate described in the resume. " +
-                "Always answer in FIRST PERSON as that candidate. " +
-                "Never mention that you are an AI, assistant, or language model. " +
-                "Use the resume details (name, experience, skills, education) to answer questions such as 'What is your name?' or 'Introduce yourself' as the candidate.";
-            var payload = new DesktopAiAnswerRequest
+            await Dispatcher.InvokeAsync(() =>
             {
-                UserContent = userContent,
-                SystemPrompt = basePrompt,
-                ResumeContext = _resumeContext
-            };
-            var response = await _apiClient.PostAsJsonAsync("desktop/ai/answer", payload);
+                AiAnswerButton.IsEnabled = false;
+                AskButton.IsEnabled = false;
+                ScreenshotAiButton.IsEnabled = false;
+                StatusTextBlock.Text = connectingMessage;
+
+                if (FindName("AnswerSectionPanel") is System.Windows.UIElement panelEarly)
+                {
+                    panelEarly.Visibility = Visibility.Visible;
+                    SetAnswerSectionRowHeight(collapsed: false);
+                }
+
+                _answerGenerationInFlight = true;
+                UpdateAnswerHistoryNav();
+            });
+
+            _ = Dispatcher.BeginInvoke(new Action(UpdateAiAnswerBodyMaxHeight), DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() => BeginStreamingAnswerDisplay(_currentAnswerDisplayHeading));
+            await Dispatcher.InvokeAsync(() => { StatusTextBlock.Text = generatingMessage; });
+
+            using var response = await _apiClient
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
+                .ConfigureAwait(false);
+
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync();
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 throw new Exception($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {body}");
             }
-            var result = await response.Content.ReadFromJsonAsync<DesktopAiAnswerResponse>();
-            var completion = result?.Answer ?? string.Empty;
 
-            AiAnswerTextBlock.Text = completion;
-            if (FindName("AnswerSectionPanel") is System.Windows.UIElement panel)
+            var completionSb = new StringBuilder();
+            await using var respStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var reader = new StreamReader(respStream);
+
+            while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
             {
-                panel.Visibility = Visibility.Visible;
-                SetAnswerSectionRowHeight(collapsed: false);
-            }
-            StatusTextBlock.Text = "Answer ready.";
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-            // Log AI answer to dashboard API
+                using var jd = JsonDocument.Parse(line);
+                var root = jd.RootElement;
+                if (root.TryGetProperty("error", out var errProp))
+                {
+                    var err = errProp.GetString() ?? "Stream error";
+                    throw new Exception(err);
+                }
+
+                if (!root.TryGetProperty("d", out var dProp))
+                    continue;
+
+                var delta = dProp.GetString();
+                if (string.IsNullOrEmpty(delta))
+                    continue;
+
+                completionSb.Append(delta);
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (_streamingAnswerRun != null)
+                        _streamingAnswerRun.Text += delta;
+                }, DispatcherPriority.Background);
+            }
+
+            var completion = completionSb.ToString();
+            await Dispatcher.InvokeAsync(() =>
+            {
+                StatusTextBlock.Text = "Formatting answer...";
+                RenderAiAnswer(completion, _currentAnswerDisplayHeading);
+                RegisterSuccessfulAnswerInHistory(completion);
+                StatusTextBlock.Text = "Answer ready.";
+                try
+                {
+                    AiAnswerTextBlock.ScrollToHome();
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                UpdateAiAnswerBodyMaxHeight();
+                UpdateAnswerHistoryNav();
+            });
+
             if (!string.IsNullOrWhiteSpace(completion))
-            {
-                _ = LogMessageAsync("Assistant", completion);
-            }
+                await AttachServerIdToAppendedAssistantAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            AiAnswerTextBlock.Text = $"Error: {ex.Message}";
-            if (FindName("AnswerSectionPanel") is System.Windows.UIElement p)
+            await Dispatcher.InvokeAsync(() =>
             {
-                p.Visibility = Visibility.Visible;
-                SetAnswerSectionRowHeight(collapsed: false);
-            }
-            StatusTextBlock.Text = "Error.";
+                RenderAiAnswer($"Error:\n- {ex.Message}", _currentAnswerDisplayHeading);
+                if (FindName("AnswerSectionPanel") is System.Windows.UIElement p)
+                {
+                    p.Visibility = Visibility.Visible;
+                    SetAnswerSectionRowHeight(collapsed: false);
+                }
+
+                StatusTextBlock.Text = "Error.";
+                UpdateAiAnswerBodyMaxHeight();
+                UpdateAnswerHistoryNav();
+            });
         }
         finally
         {
-            AiAnswerButton.IsEnabled = true;
-            AskButton.IsEnabled = true;
+            await Dispatcher.InvokeAsync(() =>
+            {
+                _answerGenerationInFlight = false;
+                AiAnswerButton.IsEnabled = true;
+                AskButton.IsEnabled = true;
+                ScreenshotAiButton.IsEnabled = true;
+                UpdateAnswerHistoryNav();
+            });
+        }
+    }
+
+    private async void ScreenshotAiButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = IncrementAiUsageAsync();
+        await Dispatcher.InvokeAsync(() => { StatusTextBlock.Text = "Capturing screen..."; });
+
+        byte[] pngBytes;
+        try
+        {
+            pngBytes = await Task.Run(() => ScreenCaptureHelper.CaptureVirtualScreenToPngBytes()).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.InvokeAsync(() =>
+            {
+                StatusTextBlock.Text = $"Screen capture failed: {ex.Message}";
+            });
+            return;
+        }
+
+        var payload = new DesktopScreenshotAnswerRequest
+        {
+            ImageBase64 = Convert.ToBase64String(pngBytes),
+            MimeType = "image/png",
+            SystemPrompt = ComposeExtendedSystemPrompt(_systemPrompt),
+            ResumeContext = _resumeContext
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "desktop/ai/screenshot-answer-stream")
+        {
+            Content = JsonContent.Create(payload)
+        };
+
+        await ExecuteAnswerStreamCoreAsync(
+            request,
+            "Screenshot",
+            connectingMessage: "Sending screenshot…",
+            generatingMessage: "Reading screen & generating answer…").ConfigureAwait(false);
+    }
+
+    private void ClearAiAnswer()
+    {
+        _streamingAnswerRun = null;
+        _currentAnswerDisplayHeading = null;
+        AiAnswerTextBlock.Document = new FlowDocument(new Paragraph());
+    }
+
+    private void BeginStreamingAnswerDisplay(string? boldHeading)
+    {
+        _streamingAnswerRun = new Run(string.Empty) { Foreground = Brushes.White };
+        var doc = new FlowDocument
+        {
+            PagePadding = new Thickness(0),
+            LineHeight = 20
+        };
+        AppendBoldQuestionHeading(doc, boldHeading);
+
+        var p = new Paragraph { Margin = new Thickness(0, 0, 0, 4) };
+        p.Inlines.Add(_streamingAnswerRun);
+        doc.Blocks.Add(p);
+        AiAnswerTextBlock.Document = doc;
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            ScrollViewer.SetCanContentScroll(AiAnswerTextBlock, false);
+            ScrollViewer.SetPanningMode(AiAnswerTextBlock, PanningMode.VerticalOnly);
+            UpdateAiAnswerBodyMaxHeight();
+        }), DispatcherPriority.Loaded);
+    }
+
+    private void RenderAiAnswer(string content, string? boldHeading = null)
+    {
+        _streamingAnswerRun = null;
+        var doc = new FlowDocument
+        {
+            PagePadding = new Thickness(0),
+            LineHeight = 20
+        };
+
+        AppendBoldQuestionHeading(doc, boldHeading);
+
+        var normalized = (content ?? string.Empty).Replace("\r\n", "\n");
+        var lines = normalized.Split('\n');
+        var codeBuffer = new StringBuilder();
+        var inCodeBlock = false;
+
+        foreach (var raw in lines)
+        {
+            var line = raw ?? string.Empty;
+            var trimmed = line.Trim();
+
+            if (trimmed.StartsWith("```", StringComparison.Ordinal))
+            {
+                if (!inCodeBlock)
+                {
+                    inCodeBlock = true;
+                    codeBuffer.Clear();
+                }
+                else
+                {
+                    AddCodeBlock(doc, codeBuffer.ToString());
+                    inCodeBlock = false;
+                }
+                continue;
+            }
+
+            if (inCodeBlock)
+            {
+                codeBuffer.AppendLine(line);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                doc.Blocks.Add(new Paragraph(new Run(" ")) { Margin = new Thickness(0, 3, 0, 3) });
+                continue;
+            }
+
+            string text = line;
+            if (Regex.IsMatch(trimmed, @"^\d+[\.\)]\s"))
+                text = trimmed;
+            else if (trimmed.StartsWith("- "))
+                text = "• " + trimmed[2..];
+
+            doc.Blocks.Add(new Paragraph(new Run(text))
+            {
+                Margin = new Thickness(0, 0, 0, 6),
+                Foreground = Brushes.White
+            });
+        }
+
+        if (inCodeBlock && codeBuffer.Length > 0)
+            AddCodeBlock(doc, codeBuffer.ToString());
+
+        AiAnswerTextBlock.Document = doc;
+        // Replacing Document can rebuild the template; re-apply smooth (pixel) scroll on the internal ScrollViewer.
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            ScrollViewer.SetCanContentScroll(AiAnswerTextBlock, false);
+            ScrollViewer.SetPanningMode(AiAnswerTextBlock, PanningMode.VerticalOnly);
+            UpdateAiAnswerBodyMaxHeight();
+        }), DispatcherPriority.Loaded);
+    }
+
+    private static void AddCodeBlock(FlowDocument doc, string codeText)
+    {
+        var codeDoc = new FlowDocument
+        {
+            PagePadding = new Thickness(8, 6, 8, 6),
+            Background = Brushes.Transparent
+        };
+
+        var codeParagraph = new Paragraph { Margin = new Thickness(0) };
+        foreach (var line in codeText.Replace("\r\n", "\n").Split('\n'))
+        {
+            AppendHighlightedCodeLine(codeParagraph, line);
+            codeParagraph.Inlines.Add(new LineBreak());
+        }
+        codeDoc.Blocks.Add(codeParagraph);
+
+        var codeView = new RichTextBox
+        {
+            IsReadOnly = true,
+            IsDocumentEnabled = false,
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC)),
+            Document = codeDoc
+        };
+        ScrollViewer.SetCanContentScroll(codeView, false);
+        ScrollViewer.SetPanningMode(codeView, PanningMode.None);
+
+        var border = new Border
+        {
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x15, 0x23, 0x42)),
+            Margin = new Thickness(0, 4, 0, 10),
+            Child = codeView
+        };
+
+        doc.Blocks.Add(new BlockUIContainer(border));
+    }
+
+    private static void AppendHighlightedCodeLine(Paragraph paragraph, string line)
+    {
+        var commentIndex = line.IndexOf("//", StringComparison.Ordinal);
+        if (commentIndex < 0) commentIndex = line.IndexOf("--", StringComparison.Ordinal);
+        if (commentIndex < 0 && line.TrimStart().StartsWith("#", StringComparison.Ordinal)) commentIndex = 0;
+
+        var codePart = commentIndex >= 0 ? line[..commentIndex] : line;
+        var commentPart = commentIndex >= 0 ? line[commentIndex..] : string.Empty;
+
+        foreach (var token in Regex.Split(codePart, @"(\W+)"))
+        {
+            if (string.IsNullOrEmpty(token)) continue;
+            var run = new Run(token);
+            if (CodeKeywords.Contains(token))
+            {
+                run.Foreground = new SolidColorBrush(Color.FromRgb(0x7D, 0xDD, 0xFF));
+                run.FontWeight = FontWeights.SemiBold;
+            }
+            else if (Regex.IsMatch(token, "^\".*\"$|^'.*'$"))
+            {
+                run.Foreground = new SolidColorBrush(Color.FromRgb(0xFC, 0xA5, 0xA5));
+            }
+            else if (Regex.IsMatch(token, @"^\d+$"))
+            {
+                run.Foreground = new SolidColorBrush(Color.FromRgb(0xFD, 0xE0, 0x68));
+            }
+            else
+            {
+                run.Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9));
+            }
+            paragraph.Inlines.Add(run);
+        }
+
+        if (!string.IsNullOrWhiteSpace(commentPart))
+        {
+            paragraph.Inlines.Add(new Run(commentPart)
+            {
+                Foreground = new SolidColorBrush(Color.FromRgb(0x6E, 0xEE, 0xB3))
+            });
         }
     }
 
@@ -1513,10 +2591,12 @@ public partial class MainWindow : Window
             using var res = await _apiClient.GetAsync("desktop/speech/token");
             if (!res.IsSuccessStatusCode)
             {
-                DesktopLogger.Warn($"GET desktop/speech/token failed status={(int)res.StatusCode}");
+                var body = await res.Content.ReadAsStringAsync();
+                DesktopLogger.Warn($"GET desktop/speech/token failed status={(int)res.StatusCode} {res.ReasonPhrase} body={body}");
                 return null;
             }
-            return await res.Content.ReadFromJsonAsync<DesktopSpeechTokenResponse>();
+            return await res.Content.ReadFromJsonAsync<DesktopSpeechTokenResponse>(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch (Exception ex)
         {
@@ -1525,12 +2605,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task LogMessageAsync(string role, string content)
+    private async Task<Guid?> LogMessageAsync(string role, string content)
     {
         try
         {
-            if (_callSessionId == Guid.Empty) return;
-            if (string.IsNullOrWhiteSpace(content)) return;
+            if (_callSessionId == Guid.Empty) return null;
+            if (string.IsNullOrWhiteSpace(content)) return null;
 
             var payload = new { role, content };
             DesktopLogger.Info($"POST callsessions/{_callSessionId}/messages role={role} len={content.Length}");
@@ -1541,7 +2621,11 @@ public partial class MainWindow : Window
                 DesktopLogger.Warn($"POST failed status={(int)response.StatusCode} {response.ReasonPhrase} body={body}");
                 throw new Exception($"HTTP {(int)response.StatusCode} {response.ReasonPhrase}. {body}");
             }
+
+            var dto = await response.Content.ReadFromJsonAsync<CallSessionMessageDto>(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             DesktopLogger.Info("POST ok");
+            return dto?.Id;
         }
         catch (Exception ex)
         {
@@ -1553,6 +2637,7 @@ public partial class MainWindow : Window
                 StatusTextBlock.Text = $"Log failed: {msg}";
             });
             DesktopLogger.Error($"LogMessageAsync exception: {ex}");
+            return null;
         }
     }
 

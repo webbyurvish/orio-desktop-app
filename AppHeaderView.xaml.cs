@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,11 +18,11 @@ public partial class AppHeaderView : UserControl
 
     public static readonly DependencyProperty HeaderBackgroundProperty =
         DependencyProperty.Register(nameof(HeaderBackground), typeof(Brush), typeof(AppHeaderView),
-            new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xE4, 0xE8, 0xF0))));
+            new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xEE, 0xF2, 0xFF))));
 
     public static readonly DependencyProperty HeaderBorderBrushProperty =
         DependencyProperty.Register(nameof(HeaderBorderBrush), typeof(Brush), typeof(AppHeaderView),
-            new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xD5, 0xDA, 0xE3))));
+            new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xC7, 0xD2, 0xFE))));
 
     public string CreditsText
     {

@@ -10,6 +10,83 @@ public partial class CreateSessionStep2View : UserControl
 {
     private Window? _hostWindow;
     private bool _isFreeSession = true;
+    private bool _languagesLoaded;
+
+    private sealed record SpeechLocaleOption(string Locale, string Label);
+
+    // Curated list of commonly used locales supported by Azure Speech-to-Text (BCP-47).
+    // Intentionally excludes most country variants to keep the dropdown simple.
+    private static readonly SpeechLocaleOption[] AzureSpeechSttLocales =
+    [
+        // Pinned at top
+        new("en-IN", "English (India)"),
+        new("hi-IN", "Hindi (India)"),
+
+        // Commonly used global / regional
+        new("en-US", "English (United States)"),
+        new("en-GB", "English (United Kingdom)"),
+        new("es-ES", "Spanish (Spain)"),
+        new("es-MX", "Spanish (Mexico)"),
+        new("fr-FR", "French (France)"),
+        new("fr-CA", "French (Canada)"),
+        new("pt-BR", "Portuguese (Brazil)"),
+        new("pt-PT", "Portuguese (Portugal)"),
+        new("de-DE", "German (Germany)"),
+        new("it-IT", "Italian (Italy)"),
+        new("nl-NL", "Dutch (Netherlands)"),
+        new("pl-PL", "Polish (Poland)"),
+        new("ru-RU", "Russian (Russia)"),
+        new("tr-TR", "Turkish (Türkiye)"),
+        new("uk-UA", "Ukrainian (Ukraine)"),
+
+        // Asia (commonly used)
+        new("ja-JP", "Japanese (Japan)"),
+        new("ko-KR", "Korean (Korea)"),
+        new("zh-CN", "Chinese (Mandarin, Simplified)"),
+        new("zh-TW", "Chinese (Taiwanese Mandarin, Traditional)"),
+        new("zh-HK", "Chinese (Cantonese, Traditional)"),
+        new("id-ID", "Indonesian (Indonesia)"),
+        new("ms-MY", "Malay (Malaysia)"),
+        new("th-TH", "Thai (Thailand)"),
+        new("vi-VN", "Vietnamese (Vietnam)"),
+
+        // Middle East / Africa (commonly used)
+        new("ar-SA", "Arabic (Saudi Arabia)"),
+        new("ar-EG", "Arabic (Egypt)"),
+        new("fa-IR", "Persian (Iran)"),
+        new("he-IL", "Hebrew (Israel)"),
+        new("sw-KE", "Kiswahili (Kenya)"),
+        new("af-ZA", "Afrikaans (South Africa)"),
+        new("zu-ZA", "Zulu (South Africa)"),
+
+        // India (commonly used)
+        new("bn-IN", "Bengali (India)"),
+        new("gu-IN", "Gujarati (India)"),
+        new("kn-IN", "Kannada (India)"),
+        new("ml-IN", "Malayalam (India)"),
+        new("mr-IN", "Marathi (India)"),
+        new("pa-IN", "Punjabi (India)"),
+        new("ta-IN", "Tamil (India)"),
+        new("te-IN", "Telugu (India)"),
+        new("ur-IN", "Urdu (India)")
+    ];
+
+    private void EnsureLanguageOptionsLoaded()
+    {
+        if (_languagesLoaded) return;
+        _languagesLoaded = true;
+
+        LanguageComboBox.Items.Clear();
+        foreach (var opt in AzureSpeechSttLocales)
+        {
+            LanguageComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = opt.Label,
+                Tag = opt.Locale
+            });
+        }
+        LanguageComboBox.SelectedIndex = 0; // default en-IN label
+    }
 
     public CreateSessionStep2View()
     {
@@ -35,6 +112,7 @@ public partial class CreateSessionStep2View : UserControl
 
         MoreOptionsPopup.PlacementTarget = SharedHeader.MoreMenuAnchorElement;
         MoveOptionsPopup.PlacementTarget = SharedHeader.MoveMenuAnchorElement;
+        EnsureLanguageOptionsLoaded();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -140,8 +218,12 @@ public partial class CreateSessionStep2View : UserControl
         get
         {
             if (LanguageComboBox.SelectedItem is ComboBoxItem item)
-                return (item.Content?.ToString() ?? "English").Trim();
-            return "English";
+            {
+                var locale = (item.Tag?.ToString() ?? string.Empty).Trim();
+                if (!string.IsNullOrWhiteSpace(locale)) return locale;
+                return (item.Content?.ToString() ?? "en-US").Trim();
+            }
+            return "en-IN";
         }
     }
 

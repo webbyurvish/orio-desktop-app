@@ -15,15 +15,10 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F1F5F9"/></Trigger></Style.Triggers>
         </Style>
-        <Style x:Key="MoveSlotBtn" TargetType="Border">
-            <Setter Property="Width" Value="72"/><Setter Property="Height" Value="56"/><Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Background" Value="#F8FAFC"/><Setter Property="BorderBrush" Value="#CBD5E1"/><Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="4"/>
-            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#EEF2F7"/></Trigger></Style.Triggers>
-        </Style>
     </UserControl.Resources>
 
-    <Border Background="#FFFFFF" CornerRadius="20" BorderBrush="#E2E8F0" BorderThickness="1" Width="520" MinHeight="200" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Border Background="#FFFFFF" CornerRadius="20" BorderBrush="#E2E8F0" BorderThickness="1" Width="520" MinHeight="200" HorizontalAlignment="Center" VerticalAlignment="Center"
+            Effect="{StaticResource OrioCardDropShadow}">
         <Grid>
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
@@ -33,22 +28,34 @@
                                  HeaderBackground="#E7EBF3"/>
 
             <Border Grid.Row="1" Background="White" CornerRadius="0,0,20,20" Padding="12,14,12,12">
-                <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="14" Padding="14,16,14,12">
+                <Border Style="{StaticResource OrioInnerFormPanelBorder}">
                     <StackPanel>
-                        <TextBlock Text="Activate Interview Session" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,4,0,10"/>
+                        <TextBlock Text="Activate Interview Session" FontSize="22" FontWeight="SemiBold" Foreground="#0F172A" HorizontalAlignment="Center" Margin="0,4,0,10"/>
                         <TextBlock Text="This will use 0.5 of your interview credit for first minutes."
-                                   FontSize="14" Foreground="#4B5563" TextAlignment="Center" Margin="0,0,0,8"/>
+                                   FontSize="14" Foreground="#64748B" TextAlignment="Center" Margin="0,0,0,8"/>
                         <TextBlock Text="The session will auto extend by 30 minutes 30 seconds before it ends."
-                                   FontSize="14" Foreground="#4B5563" TextAlignment="Center" TextWrapping="Wrap" Margin="20,0,20,18"/>
+                                   FontSize="14" Foreground="#64748B" TextAlignment="Center" TextWrapping="Wrap" Margin="20,0,20,18"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,6,0" Cursor="Hand" MouseLeftButtonDown="Back_Click">
-                                <TextBlock Text="Back" Foreground="#374151" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                            <Border Grid.Column="0" Background="Transparent" BorderBrush="#C7D2FE" BorderThickness="1.5" CornerRadius="11" Padding="10" Margin="0,0,6,0" Cursor="Hand" MouseLeftButtonDown="Back_Click">
+                                <Border.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                   Text="Return to session options without starting the clock. Your session draft stays available until you activate or leave."/>
+                                    </ToolTip>
+                                </Border.ToolTip>
+                                <TextBlock Text="Back" Foreground="#4338CA" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </Border>
-                            <Border Grid.Column="1" CornerRadius="8" Padding="10" Margin="6,0,0,0" Cursor="Hand" MouseLeftButtonDown="Activate_Click">
+                            <Border Grid.Column="1" CornerRadius="11" Padding="10" Margin="6,0,0,0" Cursor="Hand" MouseLeftButtonDown="Activate_Click">
+                                <Border.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                   Text="Starts the paid interview timer. 0.5 credit covers the first block of time; the app can auto-extend near the end of the window."/>
+                                    </ToolTip>
+                                </Border.ToolTip>
                                 <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5"><GradientStop Color="#0F172A" Offset="0"/><GradientStop Color="#27364F" Offset="1"/></LinearGradientBrush>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5"><GradientStop Color="#312E81" Offset="0"/><GradientStop Color="#1E1B4B" Offset="1"/></LinearGradientBrush>
                                 </Border.Background>
                                 <TextBlock Text="Activate (0.5 credit)" Foreground="White" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </Border>
@@ -84,12 +91,12 @@
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                     </Grid>
                 </Border>
             </Popup>

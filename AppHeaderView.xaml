@@ -6,26 +6,22 @@
              MinHeight="64">
 
     <UserControl.Resources>
-        <Style x:Key="DarkTooltipStyle" TargetType="ToolTip">
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#111827"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Placement" Value="Bottom"/>
-            <Setter Property="HasDropShadow" Value="False"/>
-        </Style>
-
         <Style x:Key="HdrIconBtn" TargetType="Border">
             <Setter Property="Width" Value="38"/>
             <Setter Property="Height" Value="38"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Background" Value="#F1F4F9"/>
-            <Setter Property="BorderBrush" Value="#D8DEE8"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="11"/>
+            <Setter Property="Background" Value="#EEF2FF"/>
+            <Setter Property="BorderBrush" Value="#A5B4FC"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E0E7FF"/>
+                    <Setter Property="BorderBrush" Value="#818CF8"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
@@ -44,13 +40,27 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,12,0">
-                <Ellipse Width="32" Height="32" Fill="#22C55E" Margin="0,0,10,0"/>
-                <TextBlock Text="ParakeetAI" FontSize="19" FontWeight="SemiBold" Foreground="#0F172A"/>
+                <Border Width="34" Height="34" CornerRadius="10" Margin="0,0,10,0" BorderBrush="#A5B4FC" BorderThickness="1.5">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#6366F1" Offset="0"/>
+                            <GradientStop Color="#4338CA" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <TextBlock Text="Orio AI" FontSize="19" FontWeight="SemiBold" Foreground="#0F172A"/>
             </StackPanel>
 
             <Border Grid.Column="1" Background="Transparent" Padding="0,0,18,0" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#111827" CornerRadius="12" Padding="14,7" Margin="0,0,10,0" BorderThickness="0">
+                    <Border Background="#312E81" CornerRadius="12" Padding="14,7" Margin="0,0,10,0" BorderThickness="0"
+                            ToolTipService.ShowDuration="60000">
+                        <Border.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                           Text="Interview credits remaining on your account. Creating sessions may be free; activating a paid session uses credits as shown in session setup."/>
+                            </ToolTip>
+                        </Border.ToolTip>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="CashMultiple" Width="16" Height="16" Foreground="White" Margin="0,0,6,0"/>
                             <TextBlock Text="{Binding CreditsText, ElementName=Root}" Foreground="#F8FAFC" FontSize="12.5" FontWeight="SemiBold"/>
@@ -62,12 +72,22 @@
                             MouseLeftButtonDown="MoreMenuAnchor_MouseLeftButtonDown"
                             ToolTipService.ShowDuration="60000">
                         <Border.ToolTip>
-                            <ToolTip Style="{StaticResource DarkTooltipStyle}" Content="More"/>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}" Text="More options: open the dashboard or sign out."/>
+                            </ToolTip>
                         </Border.ToolTip>
                         <iconPacks:PackIconMaterial Kind="DotsVertical" Width="16" Height="16" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
 
-                    <Border x:Name="MoveMenuAnchor" Style="{StaticResource HdrIconBtn}" MouseLeftButtonDown="MoveMenuAnchor_MouseLeftButtonDown">
+                    <Border x:Name="MoveMenuAnchor"
+                            Style="{StaticResource HdrIconBtn}"
+                            MouseLeftButtonDown="MoveMenuAnchor_MouseLeftButtonDown"
+                            ToolTipService.ShowDuration="60000">
+                        <Border.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}" Text="Move the window to a corner or edge of your screen."/>
+                            </ToolTip>
+                        </Border.ToolTip>
                         <iconPacks:PackIconMaterial Kind="CursorMove" Width="16" Height="16" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
 
@@ -75,7 +95,9 @@
                             MouseLeftButtonDown="MinimizeBorder_MouseLeftButtonDown"
                             ToolTipService.ShowDuration="60000">
                         <Border.ToolTip>
-                            <ToolTip Style="{StaticResource DarkTooltipStyle}" Content="Hide"/>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}" Text="Hide to a small chip at the top of the screen. Click the chip to bring the window back."/>
+                            </ToolTip>
                         </Border.ToolTip>
                         <iconPacks:PackIconMaterial Kind="ChevronUp" Width="18" Height="18" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -91,7 +113,9 @@
                             MouseLeftButtonDown="CloseBorder_MouseLeftButtonDown"
                             ToolTipService.ShowDuration="60000">
                         <Border.ToolTip>
-                            <ToolTip Style="{StaticResource DarkTooltipStyle}" Content="Close"/>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}" Text="Close this window. If a session is running, use End session first if you want to keep your progress."/>
+                            </ToolTip>
                         </Border.ToolTip>
                         <iconPacks:PackIconMaterial Kind="Close" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>

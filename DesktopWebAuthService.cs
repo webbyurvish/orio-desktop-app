@@ -319,7 +319,7 @@ public sealed class SecureTokenStore
 {
     private static readonly string TokenPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ParakeetAI",
+        "OrioAI",
         "AiInterviewAssistant",
         "tokens.dat");
 

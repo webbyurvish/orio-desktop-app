@@ -56,21 +56,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="MoveSlotBtn" TargetType="Border">
-            <Setter Property="Width" Value="72"/>
-            <Setter Property="Height" Value="56"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Background" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="4"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#EEF2F7"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
 
     <!-- MAIN CARD: width &lt; MainWindow (560) so nothing clips and margins look even -->
@@ -83,7 +68,8 @@
             Padding="0"
             SnapsToDevicePixels="True"
             HorizontalAlignment="Center"
-            VerticalAlignment="Center">
+            VerticalAlignment="Center"
+            Effect="{StaticResource OrioCardDropShadow}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -113,14 +99,14 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0"
-                           Text="ParakeetAI"
+                           Text="Orio AI"
                            FontSize="28"
                            FontWeight="SemiBold"
                            Foreground="#0F172A"
                            HorizontalAlignment="Center"/>
 
                 <TextBlock Grid.Row="1"
-                           Text="Login to your ParakeetAI account to start your interview."
+                           Text="Login to your Orio AI account to start your interview."
                            FontSize="14.5"
                            Foreground="#64748B"
                            LineHeight="22"
@@ -141,16 +127,23 @@
 
                     <Border Grid.Column="1"
                             x:Name="LoginBorder"
-                            Height="48"
-                            CornerRadius="10"
+                            Height="50"
+                            CornerRadius="12"
                             Cursor="Hand"
                             Padding="12,0"
-                            MouseLeftButtonDown="LoginBorder_MouseLeftButtonDown">
+                            MouseLeftButtonDown="LoginBorder_MouseLeftButtonDown"
+                            ToolTipService.ShowDuration="60000">
+                        <Border.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                           Text="Sign in with your Orio account in the browser. When you finish, return here—the app will detect an active session."/>
+                            </ToolTip>
+                        </Border.ToolTip>
 
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
-                                <GradientStop Color="#0F172A" Offset="0"/>
-                                <GradientStop Color="#1E293B" Offset="1"/>
+                                <GradientStop Color="#312E81" Offset="0"/>
+                                <GradientStop Color="#1E1B4B" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
 
@@ -309,23 +302,23 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopLeft_Click">
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopCenter_Click">
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveTopRight_Click">
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
 
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomLeft_Click">
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomCenter_Click">
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveSlotBtn}" MouseLeftButtonDown="MoveBottomRight_Click">
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click">
                             <iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </Grid>

@@ -6,7 +6,7 @@ The dashboard can open this app with a specific **call session** and **API token
 
 1. In the dashboard, when you click **Desktop App** in the "Choose Platform" modal (after creating a session or when opening a session from the list), the browser navigates to a URL like:
    ```
-   orioai://start?sessionId=<GUID>&apiBaseUrl=<...>&token=<JWT>
+   orioai://start?sessionId=<GUID>&apiBaseUrl=<...>&token=<JWT>&language=Hindi
    ```
 2. If the `orioai://` protocol is registered on your PC, Windows starts this app and passes that URL as a command-line argument.
 3. The app parses the URL and uses that **session id**, **API base URL**, and **token** for the rest of the run. All transcript and AI answers are then sent to that session.

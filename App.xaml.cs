@@ -64,7 +64,7 @@ public partial class App : Application
             var query = uri.Query?.TrimStart('?');
             if (string.IsNullOrEmpty(query)) return;
 
-            string? sessionId = null, apiBaseUrl = null, token = null, resumeId = null;
+            string? sessionId = null, apiBaseUrl = null, token = null, resumeId = null, language = null;
             foreach (var part in query.Split('&'))
             {
                 var idx = part.IndexOf('=');
@@ -75,6 +75,7 @@ public partial class App : Application
                 else if (string.Equals(key, "apiBaseUrl", StringComparison.OrdinalIgnoreCase)) apiBaseUrl = value;
                 else if (string.Equals(key, "token", StringComparison.OrdinalIgnoreCase)) token = value;
                 else if (string.Equals(key, "resumeId", StringComparison.OrdinalIgnoreCase)) resumeId = value;
+                else if (string.Equals(key, "language", StringComparison.OrdinalIgnoreCase)) language = value;
             }
 
             if (!string.IsNullOrWhiteSpace(sessionId))
@@ -83,11 +84,13 @@ public partial class App : Application
                 Settings.ApiBaseUrl = apiBaseUrl.Trim().TrimEnd('/') + "/";
             if (!string.IsNullOrWhiteSpace(resumeId))
                 Settings.ResumeId = resumeId.Trim();
+            if (!string.IsNullOrWhiteSpace(language))
+                Settings.SessionLanguage = language.Trim();
             // Token is optional. If not present, keep the token from appsettings.json.
             if (!string.IsNullOrEmpty(token))
                 Settings.ApiBearerToken = token;
 
-            DesktopLogger.Info($"Protocol parsed. sessionId={sessionId} apiBaseUrl={apiBaseUrl} resumeId={resumeId} tokenPresent={!string.IsNullOrEmpty(token)}");
+            DesktopLogger.Info($"Protocol parsed. sessionId={sessionId} apiBaseUrl={apiBaseUrl} resumeId={resumeId} language={language} tokenPresent={!string.IsNullOrEmpty(token)}");
         }
         catch
         {
@@ -106,6 +109,7 @@ public class AppSettings
     public string ApiBearerToken { get; set; } = "";
     public string CallSessionId { get; set; } = "AB589C99-0980-4467-8AF5-ADAB340FE1A0";
     public string? ResumeId { get; set; }
+    public string? SessionLanguage { get; set; }
 }
 
 public class DesktopAuthSettings
