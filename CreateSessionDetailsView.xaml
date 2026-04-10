@@ -8,44 +8,11 @@
              Background="Transparent"
              FontFamily="Segoe UI">
 
-    <UserControl.Resources>
-        <Style x:Key="MenuRowButton" TargetType="Border">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F1F5F9"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="MenuTinyIconBtn" TargetType="Border">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F8FAFC"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-    </UserControl.Resources>
-
-    <Border Background="#FFFFFF"
-            CornerRadius="20"
-            BorderBrush="#E2E8F0"
-            BorderThickness="1"
+    <Border Style="{StaticResource OrioShellCardBorder}"
             Width="520"
-            MinHeight="200"
+            MinHeight="180"
             HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Effect="{StaticResource OrioCardDropShadow}">
+            VerticalAlignment="Center">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -55,27 +22,27 @@
 
             <local:AppHeaderView x:Name="SharedHeader"
                                  Grid.Row="0"
-                                 CreditsText="2 Credits"
+                                 CreditsText="{Binding CreditsText, Source={x:Static local:CreditsState.Current}}"
                                  MoreClicked="Header_MoreClicked"
                                  MoveClicked="Header_MoveClicked"
                                  MinimizeClicked="Header_MinimizeClicked"
-                                 CloseClicked="Header_CloseClicked"
-                                 HeaderBackground="#E7EBF3"/>
+                                 CloseClicked="Header_CloseClicked"/>
 
-            <Border Grid.Row="1" Padding="10,9,10,10" Background="White" CornerRadius="0,0,20,20">
+            <Border Grid.Row="1" Style="{StaticResource OrioShellBodyBorder}">
                 <StackPanel>
-                    <Border Style="{StaticResource OrioTabSwitcherBarBorder}" Margin="0,0,0,12">
+                    <Border Style="{StaticResource OrioTabSwitcherBarBorder}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="White" CornerRadius="10" BorderBrush="#818CF8" BorderThickness="1.5" Padding="10,9">
-                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="#312E81" FontSize="14" FontWeight="SemiBold"/>
+                            <Border Grid.Column="0" Style="{StaticResource OrioTabSegmentSelected}">
+                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="{StaticResource OrioTextBrush}" FontSize="13" FontWeight="SemiBold"/>
                             </Border>
-                            <Border Grid.Column="1" Background="Transparent" CornerRadius="10" Padding="10,9" Cursor="Hand" MouseLeftButtonDown="PastSessionsTab_Click">
-                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="#475569" FontSize="14" FontWeight="SemiBold"/>
+                            <Border Grid.Column="2" Style="{StaticResource OrioTabSegmentIdle}" MouseLeftButtonDown="PastSessionsTab_Click">
+                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="{StaticResource OrioMutedBrush}" FontSize="13" FontWeight="SemiBold"/>
                             </Border>
                         </Grid>
                     </Border>
@@ -83,7 +50,7 @@
                     <Border Style="{StaticResource OrioInnerFormPanelBorder}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Company" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="Company" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                     <Border.ToolTip>
                                         <ToolTip>
@@ -91,7 +58,7 @@
                                                        Text="The company you are interviewing with. Used to tailor answers and context to that employer."/>
                                         </ToolTip>
                                     </Border.ToolTip>
-                                    <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                 </Border>
                             </StackPanel>
                             <Border Style="{StaticResource OrioFieldHostBorder}" Margin="0,0,0,10">
@@ -108,7 +75,7 @@
                             </Border>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Job Description" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="Job Description" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                     <Border.ToolTip>
                                         <ToolTip>
@@ -116,7 +83,7 @@
                                                        Text="Paste the job description or key requirements. The assistant uses this to stay aligned with the role and stack."/>
                                         </ToolTip>
                                     </Border.ToolTip>
-                                    <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                 </Border>
                             </StackPanel>
                             <Border Style="{StaticResource OrioFieldHostBorder}" Margin="0,0,0,10">
@@ -138,7 +105,7 @@
                             </Border>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Resume" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="Resume" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                     <Border.ToolTip>
                                         <ToolTip>
@@ -146,7 +113,7 @@
                                                        Text="Pick the resume stored in your account. Answers can reference your experience, skills, and projects from that profile."/>
                                         </ToolTip>
                                     </Border.ToolTip>
-                                    <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                 </Border>
                             </StackPanel>
                             <ComboBox x:Name="ResumeComboBox"
@@ -165,7 +132,7 @@
                             <TextBlock x:Name="ResumeLoadStatusText"
                                        Margin="2,0,0,12"
                                        FontSize="11.5"
-                                       Foreground="#64748B"
+                                       Foreground="{StaticResource OrioMutedBrush}"
                                        Text=""/>
 
                             <Grid>
@@ -173,17 +140,18 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="Transparent" CornerRadius="10" BorderBrush="#C7D2FE" BorderThickness="1.5" Padding="10" Cursor="Hand" MouseLeftButtonDown="Back_Click">
-                                    <TextBlock Text="Back" Foreground="#4338CA" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <Border Grid.Column="0" Style="{StaticResource OrioOutlineSecondaryBtn}" Margin="0,0,6,0" MouseLeftButtonDown="Back_Click">
+                                    <TextBlock Text="Back" Foreground="#A5B4FC" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                 </Border>
-                                <Border Grid.Column="1" CornerRadius="11" Padding="10" Cursor="Hand" MouseLeftButtonDown="Next_Click">
+                                <Border Grid.Column="1" CornerRadius="9" Padding="9,8" Margin="6,0,0,0" Cursor="Hand" MouseLeftButtonDown="Next_Click">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
-                                            <GradientStop Color="#312E81" Offset="0"/>
-                                            <GradientStop Color="#1E1B4B" Offset="1"/>
+                                            <GradientStop Color="#0D9488" Offset="0"/>
+                                            <GradientStop Color="#6366F1" Offset="0.55"/>
+                                            <GradientStop Color="#7C3AED" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock Text="Next" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Next" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                 </Border>
                             </Grid>
                         </StackPanel>
@@ -192,20 +160,30 @@
             </Border>
 
             <Popup x:Name="MoreOptionsPopup" Placement="Bottom" VerticalOffset="8" HorizontalOffset="-6" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
-                <Border MinWidth="272" MaxWidth="340" Background="#FFFFFF" CornerRadius="16" BorderBrush="#E2E8F0" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
-                    <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="3" Direction="270" Opacity="0.12" Color="#0F172A"/></Border.Effect>
-                    <StackPanel Margin="4,6,4,8">
-                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="12,12,0,0" MouseLeftButtonDown="MenuDashboard_Click">
+                <Border Style="{StaticResource OrioPopupShell}" MinWidth="220" MaxWidth="260" Padding="0">
+                    <StackPanel Margin="4,4,4,4">
+                        <Border Style="{StaticResource OrioPopupEmailChip}"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding Email, Source={x:Static local:DesktopUserState.Current}}"
+                                       FontSize="12.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource OrioTextBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Border Height="1" Background="{StaticResource OrioBorderSubtleBrush}" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="10,10,0,0" MouseLeftButtonDown="MenuDashboard_Click">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="20" Height="20" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <TextBlock Text="Dashboard" FontSize="14.5" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="18" Height="18" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Dashboard" FontSize="13.5" FontWeight="SemiBold" Foreground="{StaticResource OrioTextBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
-                        <Border Height="1" Background="#E2E8F0" Margin="14,6,14,0"/>
-                        <Border Style="{StaticResource MenuRowDanger}" MouseLeftButtonDown="MenuLogout_Click">
+                        <Border Height="1" Background="{StaticResource OrioBorderSubtleBrush}" Margin="0,6,0,0"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}"/>
+                        <Border Style="{StaticResource MenuRowDanger}" CornerRadius="0,0,10,10" MouseLeftButtonDown="MenuLogout_Click"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="Logout" Width="20" Height="20" Foreground="#DC2626" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <TextBlock Text="Logout" FontSize="14.5" FontWeight="SemiBold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="Logout" Width="18" Height="18" Foreground="#F87171" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Logout" FontSize="13.5" FontWeight="SemiBold" Foreground="#FCA5A5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -213,17 +191,16 @@
             </Popup>
 
             <Popup x:Name="MoveOptionsPopup" Placement="Bottom" VerticalOffset="6" HorizontalOffset="-78" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
-                <Border Background="#FFFFFF" CornerRadius="14" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12" SnapsToDevicePixels="True">
-                    <Border.Effect><DropShadowEffect BlurRadius="20" ShadowDepth="2" Direction="270" Opacity="0.14" Color="#0F172A"/></Border.Effect>
+                <Border Style="{StaticResource OrioPopupShell}" Padding="10">
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                     </Grid>
                 </Border>
             </Popup>

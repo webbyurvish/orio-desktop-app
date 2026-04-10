@@ -146,7 +146,14 @@ public partial class CreateSessionDetailsView : UserControl
     private void Header_MoveClicked(object? sender, RoutedEventArgs e)
     {
         MoreOptionsPopup.IsOpen = false;
-        MoveOptionsPopup.IsOpen = !MoveOptionsPopup.IsOpen;
+        MoveOptionsPopup.IsOpen = false;
+
+        var owner = Window.GetWindow(this);
+        if (owner == null) return;
+
+        var picked = MoveOverlayWindow.PickSlot(owner);
+        if (picked != null)
+            WindowSlotRequested?.Invoke(picked.Value);
     }
 
     private void EmitWindowSlot(StartupWindowSlot slot, MouseButtonEventArgs e)
@@ -264,6 +271,17 @@ public partial class CreateSessionDetailsView : UserControl
 
     public string Company => (CompanyTextBox.Text ?? string.Empty).Trim();
     public string JobDescription => (JobDescriptionTextBox.Text ?? string.Empty).Trim();
+
+    public void ResetForNewSession()
+    {
+        CompanyTextBox.Text = string.Empty;
+        JobDescriptionTextBox.Text = string.Empty;
+
+        // "Fresh start": don't implicitly carry over last resume selection.
+        // The next ReloadResumesAsync may pick index 0; we reset again after reload in the host when needed.
+        ResumeComboBox.SelectedIndex = -1;
+        ResumeLoadStatusText.Text = string.Empty;
+    }
 
     public Guid? SelectedResumeId
     {

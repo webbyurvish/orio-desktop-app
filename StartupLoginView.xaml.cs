@@ -32,6 +32,7 @@ public partial class StartupLoginView : UserControl
     public event RoutedEventHandler? MinimizeRequested;
     public event Action<StartupWindowSlot>? WindowSlotRequested;
     public event RoutedEventHandler? DashboardRequested;
+    public event RoutedEventHandler? LogoutRequested;
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -81,7 +82,14 @@ public partial class StartupLoginView : UserControl
     private void SharedHeader_MoveClicked(object? sender, RoutedEventArgs e)
     {
         MoreOptionsPopup.IsOpen = false;
-        MoveOptionsPopup.IsOpen = !MoveOptionsPopup.IsOpen;
+        MoveOptionsPopup.IsOpen = false;
+
+        var owner = Window.GetWindow(this);
+        if (owner == null) return;
+
+        var picked = MoveOverlayWindow.PickSlot(owner);
+        if (picked != null)
+            WindowSlotRequested?.Invoke(picked.Value);
     }
 
     private void EmitWindowSlot(StartupWindowSlot slot, MouseButtonEventArgs e)
@@ -103,6 +111,13 @@ public partial class StartupLoginView : UserControl
         e.Handled = true;
         MoreOptionsPopup.IsOpen = false;
         DashboardRequested?.Invoke(this, new RoutedEventArgs());
+    }
+
+    private void MenuLogout_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        MoreOptionsPopup.IsOpen = false;
+        LogoutRequested?.Invoke(this, new RoutedEventArgs());
     }
 
     private void MenuNextScreen_Click(object sender, MouseButtonEventArgs e)

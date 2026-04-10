@@ -8,7 +8,7 @@ public static class DesktopLogger
     private static readonly object _lock = new();
     public static string LogFilePath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OrioAI",
+        "SmeedAI",
         "AiInterviewAssistant",
         "desktop.log"
     );

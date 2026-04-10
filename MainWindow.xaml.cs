@@ -141,6 +141,12 @@ public partial class MainWindow : Window
         public Guid? ResumeId { get; set; }
     }
 
+    private sealed class CurrentUserDto
+    {
+        public decimal CallCredits { get; set; }
+        public string? Email { get; set; }
+    }
+
     private const int WDA_NONE = 0;
     private const int WDA_EXCLUDEFROMCAPTURE = 0x11;
 
@@ -153,11 +159,28 @@ public partial class MainWindow : Window
     [DllImport("user32.dll", SetLastError = true)]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
+
     private const int GWL_EXSTYLE = -20;
     private const int GWL_STYLE = -16;
     private const int WS_EX_CLIENTEDGE = 0x200;
     private const int WS_EX_STATICEDGE = 0x20000;
+    private const int WS_EX_TOOLWINDOW = 0x80;
+    private const int WS_EX_APPWINDOW = 0x40000;
     private const int WS_BORDER = 0x00800000;
+
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_FRAMECHANGED = 0x0020;
 
     [DllImport("dwmapi.dll", SetLastError = true)]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
@@ -246,6 +269,16 @@ public partial class MainWindow : Window
     private int _pendingExtendSyncCount;
     private bool _pendingEndSync;
     private DateTimeOffset _lastServerSyncAttemptUtc;
+    private bool _saveTranscriptEnabled = true;
+
+    /// <summary>Bumped when a session ends or a new interview starts so in-flight AI answer streams cannot repaint the UI for the wrong session.</summary>
+    private int _answerUiEpoch;
+
+    /// <summary>Matches <see cref="_answerUiEpoch"/> snapshot for the answer stream that disabled the AI buttons; cleared on bump or release.</summary>
+    private int _answerStreamLeaseEpoch;
+
+    private readonly SemaphoreSlim _creditsRefreshLock = new(1, 1);
+    private DateTimeOffset _lastCreditsRefreshUtc = DateTimeOffset.MinValue;
 
     private readonly List<AnswerHistoryItem> _sessionAnswerHistory = new();
     private int _answerHistoryViewIndex = -1;
@@ -283,6 +316,7 @@ public partial class MainWindow : Window
         }
         PastSessionsView.ConfigureApiClient(_apiClient);
         CreateSessionDetailsView.ConfigureApiClient(_apiClient);
+        DesktopAnalytics.Configure(_apiClient);
         if (!Guid.TryParse(settings.CallSessionId, out _callSessionId))
         {
             // If parsing fails, use the fixed session id you requested for now
@@ -305,28 +339,38 @@ public partial class MainWindow : Window
         DesktopLogger.Info($"MainWindow init. baseAddress={_apiClient.BaseAddress} sessionId={_callSessionId} tokenPresent={_apiClient.DefaultRequestHeaders.Authorization != null} launchedViaProtocol={App.LaunchedViaProtocol}");
         DesktopLogger.Info($"Log file: {DesktopLogger.LogFilePath}");
 
+        // Populate credits chip as soon as we have a token (appsettings/protocol may include one).
+        _ = RefreshCreditsFromServerAsync(force: true, showLoading: !CreditsState.Current.IsKnown);
+
         // Startup screen only; main interview UI appears after Login.
         ApplyStartupChrome();
         StartupLoginView.LoginRequested += async (_, _) => await HandleLoginRequestedAsync();
         StartupLoginView.DashboardRequested += (_, _) => OpenWebDashboardHome();
+        StartupLoginView.LogoutRequested += async (_, _) => await PerformLogoutAsync();
         StartupLoginView.CloseRequested += (_, _) => Close();
         StartupLoginView.MinimizeRequested += (_, _) => MinimizeToRestoreChip();
         StartupLoginView.WindowSlotRequested += ApplyStartupWindowSlot;
         SessionSetupView.FullSessionRequested += (_, _) =>
         {
             _isFreeSessionFlow = false;
+            ResetCreateSessionDraftForNewFlow();
             ShowCreateSessionDetailsView();
         };
         SessionSetupView.FreeSessionRequested += (_, _) =>
         {
             _isFreeSessionFlow = true;
+            ResetCreateSessionDraftForNewFlow();
             ShowCreateSessionDetailsView();
         };
         SessionSetupView.CloseRequested += (_, _) => Close();
         SessionSetupView.MinimizeRequested += (_, _) => MinimizeToRestoreChip();
         SessionSetupView.WindowSlotRequested += ApplyStartupWindowSlot;
         SessionSetupView.PastSessionsRequested += (_, _) => ShowPastSessionsView();
-        PastSessionsView.CreateRequested += (_, _) => ShowSessionSetupView();
+        PastSessionsView.CreateRequested += (_, _) =>
+        {
+            ResetCreateSessionDraftForNewFlow();
+            ShowSessionSetupView();
+        };
         PastSessionsView.ViewAllRequested += (_, _) => OpenPastSessionsInBrowser();
         PastSessionsView.ActivateNotActivatedRequested += (sessionId, isFree, language) =>
         {
@@ -438,14 +482,31 @@ public partial class MainWindow : Window
         Hide();
     }
 
+    /// <summary>
+    /// Restores the main window if it was hidden/minimized and hides the restore chip.
+    /// Used when returning from external flows (browser / protocol activation).
+    /// </summary>
+    private void RestoreFromRestoreChipIfNeeded()
+    {
+        try
+        {
+            // If we're hidden, Show() brings us back. If we're minimized, normalize.
+            Show();
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
+            Activate();
+            try { Focus(); } catch { /* ignore */ }
+            _restoreChip?.Hide();
+        }
+        catch
+        {
+            // best-effort only
+        }
+    }
+
     private void OnRestoreChipRestoreRequested(object? sender, EventArgs e)
     {
-        Show();
-        if (WindowState == WindowState.Minimized)
-            WindowState = WindowState.Normal;
-        Activate();
-        try { Focus(); } catch { /* ignore */ }
-        _restoreChip?.Hide();
+        RestoreFromRestoreChipIfNeeded();
     }
 
     private void ApplyStartupWindowSlot(StartupWindowSlot slot)
@@ -552,10 +613,16 @@ public partial class MainWindow : Window
             StartupLoginView.SetLoginBusy(true, "Opening browser for secure login...");
             DesktopLogger.Info($"[AUTH:{authTraceId}] Desktop login attempt started timeout={timeoutSeconds}s authorizeUrl={App.Settings.DesktopAuth.AuthorizeUrl} exchangeUrl={App.Settings.DesktopAuth.ExchangeUrl}");
 
+            // User is switching to the browser flow; keep desktop out of the way.
+            MinimizeToRestoreChip();
+
             DesktopAuthTokens tokens = await _desktopWebAuthService.AuthenticateAsync(attemptCts.Token, authTraceId);
             _apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
             DesktopLogger.Info($"[AUTH:{authTraceId}] Desktop login successful. API bearer updated accessLen={tokens.AccessToken.Length} refreshLen={tokens.RefreshToken.Length}");
             StartupLoginView.SetLoginStatus("Login successful.");
+            // The login finished; bring the window back to the foreground.
+            RestoreFromRestoreChipIfNeeded();
+            await RefreshCreditsFromServerAsync(force: true, showLoading: false).ConfigureAwait(true);
             NavigateAfterAuthentication(source: $"login:{authTraceId}");
         }
         catch (OperationCanceledException)
@@ -594,6 +661,9 @@ public partial class MainWindow : Window
     {
         if (!IsApiAuthenticated())
             return;
+
+        // If the app was hidden while the user interacted with the browser, restore it.
+        RestoreFromRestoreChipIfNeeded();
 
         if (_pendingProtocolActivation)
         {
@@ -657,6 +727,7 @@ public partial class MainWindow : Window
         var targetUrl = $"{GetWebAppOrigin().TrimEnd('/')}/dashboard";
         try
         {
+            MinimizeToRestoreChip();
             Process.Start(new ProcessStartInfo { FileName = targetUrl, UseShellExecute = true });
             DesktopLogger.Info($"Opened web dashboard: {targetUrl}");
         }
@@ -673,6 +744,7 @@ public partial class MainWindow : Window
 
         try
         {
+            MinimizeToRestoreChip();
             Process.Start(new ProcessStartInfo
             {
                 FileName = targetUrl,
@@ -700,6 +772,8 @@ public partial class MainWindow : Window
 
             SecureTokenStore.ClearPersistedTokens();
             _apiClient.DefaultRequestHeaders.Authorization = null;
+            CreditsState.Current.SetUnknown();
+            DesktopUserState.Current.Clear();
 
             _finalTranscript.Clear();
             _partialMic = string.Empty;
@@ -708,6 +782,8 @@ public partial class MainWindow : Window
 
             ResetSessionAnswerHistoryForInterview();
             ResetAutoAnswerTransientState();
+            BumpAnswerUiEpoch();
+            ResetInterviewAnswerUi();
 
             if (Guid.TryParse(App.Settings.CallSessionId, out var sid))
                 _callSessionId = sid;
@@ -807,6 +883,12 @@ public partial class MainWindow : Window
         CreateSessionStep2View.SetSessionMode(_isFreeSessionFlow);
     }
 
+    private void ResetCreateSessionDraftForNewFlow()
+    {
+        CreateSessionDetailsView.ResetForNewSession();
+        CreateSessionStep2View.ResetForNewSession();
+    }
+
     private async Task HandleCreateFreeSessionRequestedAsync()
     {
         var company = CreateSessionDetailsView.Company;
@@ -832,6 +914,7 @@ public partial class MainWindow : Window
                 IsFreeSession = _isFreeSessionFlow
             };
             App.Settings.SessionLanguage = payload.Language;
+            _saveTranscriptEnabled = payload.SaveTranscript;
 
             DesktopLogger.Info($"Create session request titleLen={payload.Title?.Length ?? 0} hasResume={payload.ResumeId.HasValue} language={payload.Language} saveTranscript={payload.SaveTranscript} isFreeSession={payload.IsFreeSession}");
             using var response = await _apiClient.PostAsJsonAsync("callsessions", payload);
@@ -874,6 +957,8 @@ public partial class MainWindow : Window
 
     private void ShowActivateSessionView()
     {
+        ActivateSessionView.PrepareForDisplay();
+
         ResizeMode = ResizeMode.NoResize;
         StartupLoginView.Visibility = Visibility.Collapsed;
         SessionSetupView.Visibility = Visibility.Collapsed;
@@ -890,6 +975,58 @@ public partial class MainWindow : Window
         TrySetDwmBorderColor(0x00FAFBFC);
     }
 
+    private async Task RefreshCreditsFromServerAsync(bool force = false, bool showLoading = false)
+    {
+        try
+        {
+            if (!IsApiAuthenticated())
+            {
+                await Dispatcher.InvokeAsync(() => CreditsState.Current.SetUnknown());
+                await Dispatcher.InvokeAsync(() => DesktopUserState.Current.Clear());
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            if (!force && (now - _lastCreditsRefreshUtc) < TimeSpan.FromSeconds(20))
+                return;
+
+            if (!await _creditsRefreshLock.WaitAsync(0).ConfigureAwait(false))
+                return;
+
+            try
+            {
+                now = DateTimeOffset.UtcNow;
+                if (!force && (now - _lastCreditsRefreshUtc) < TimeSpan.FromSeconds(20))
+                    return;
+
+                if (showLoading)
+                    await Dispatcher.InvokeAsync(() => CreditsState.Current.SetLoading());
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var me = await _apiClient.GetFromJsonAsync<CurrentUserDto>("auth/me", options).ConfigureAwait(false);
+                if (me == null)
+                {
+                    await Dispatcher.InvokeAsync(() => CreditsState.Current.SetUnknown());
+                    await Dispatcher.InvokeAsync(() => DesktopUserState.Current.Clear());
+                    return;
+                }
+
+                _lastCreditsRefreshUtc = DateTimeOffset.UtcNow;
+                await Dispatcher.InvokeAsync(() => CreditsState.Current.SetCredits(me.CallCredits));
+                await Dispatcher.InvokeAsync(() => DesktopUserState.Current.SetEmail(me.Email));
+            }
+            finally
+            {
+                _creditsRefreshLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            DesktopLogger.Warn($"RefreshCreditsFromServerAsync failed: {ex.Message}");
+            try { await Dispatcher.InvokeAsync(() => CreditsState.Current.SetUnknown()); } catch { /* ignore */ }
+        }
+    }
+
     private void ApplyMainChrome()
     {
         ResizeMode = ResizeMode.CanResizeWithGrip;
@@ -903,7 +1040,7 @@ public partial class MainWindow : Window
         SizeToContent = SizeToContent.Height;
         Width = 720;
         RootChromeBorder.Padding = new Thickness(12);
-        RootChromeBorder.CornerRadius = new CornerRadius(14);
+        RootChromeBorder.CornerRadius = new CornerRadius(16);
         RootChromeBorder.BorderThickness = new Thickness(1);
         Opacity = 1.0;
         ApplyChromeTranslucencyFromSlider();
@@ -924,8 +1061,9 @@ public partial class MainWindow : Window
         byte bgA = (byte)Math.Round(40 + t * (210 - 40));
         byte borderA = (byte)Math.Round(36 + t * (160 - 36));
 
-        RootChromeBorder.Background = new SolidColorBrush(Color.FromArgb(bgA, 0x00, 0x00, 0x00));
-        RootChromeBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(borderA, 0xFF, 0xFF, 0xFF));
+        // Aurora void + cool edge (matches SharedDesktopChrome aurora stealth)
+        RootChromeBorder.Background = new SolidColorBrush(Color.FromArgb(bgA, 0x05, 0x05, 0x08));
+        RootChromeBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(borderA, 0xC7, 0xD2, 0xFE));
     }
 
     private void WindowOpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -962,8 +1100,10 @@ public partial class MainWindow : Window
     {
         await StartMainUiIfNeededAsync().ConfigureAwait(true);
         await EnsureSpeechConfiguredAsync().ConfigureAwait(true);
+        BumpAnswerUiEpoch();
         ResetSessionAnswerHistoryForInterview();
         ResetAutoAnswerTransientState();
+        ResetInterviewAnswerUi();
         try
         {
             await LoadAssistantAnswerHistoryFromServerAsync().ConfigureAwait(true);
@@ -1000,6 +1140,12 @@ public partial class MainWindow : Window
 
         var mode = _activeSessionIsFree ? "Free" : "Full";
         StatusTextBlock.Text = $"Session started ({mode}).";
+
+        var cid = _callSessionId == Guid.Empty ? (Guid?)null : _callSessionId;
+        DesktopAnalytics.Track(
+            DesktopAnalyticsEventTypes.SessionActivated,
+            JsonSerializer.Serialize(new { mode, free = _activeSessionIsFree }),
+            cid);
     }
 
     private void ResetSessionAnswerHistoryForInterview()
@@ -1046,6 +1192,29 @@ public partial class MainWindow : Window
                 _sessionAnswerHistory.Add(it);
             _answerHistoryViewIndex = items.Count > 0 ? items.Count - 1 : -1;
             _lastAppendedAnswerHistoryIndex = -1;
+
+            if (items.Count > 0)
+            {
+                if (FindName("AnswerSectionPanel") is System.Windows.UIElement panel)
+                {
+                    panel.Visibility = Visibility.Visible;
+                    SetAnswerSectionRowHeight(collapsed: false);
+                }
+
+                ApplyAnswerHistoryView();
+            }
+            else
+            {
+                ClearAiAnswer();
+                if (FindName("AnswerSectionPanel") is System.Windows.UIElement emptyPanel)
+                {
+                    emptyPanel.Visibility = Visibility.Collapsed;
+                    SetAnswerSectionRowHeight(collapsed: true);
+                }
+
+                UpdateAiAnswerBodyMaxHeight();
+            }
+
             UpdateAnswerHistoryNav();
         });
     }
@@ -1125,10 +1294,13 @@ public partial class MainWindow : Window
         ApplyAnswerHistoryView();
     }
 
-    private async Task AttachServerIdToAppendedAssistantAsync()
+    private async Task AttachServerIdToAppendedAssistantAsync(Guid streamSessionId)
     {
         try
         {
+            if (_callSessionId != streamSessionId || !_sessionActive)
+                return;
+
             var idx = _lastAppendedAnswerHistoryIndex;
             if (idx < 0 || idx >= _sessionAnswerHistory.Count) return;
 
@@ -1138,6 +1310,8 @@ public partial class MainWindow : Window
 
             await Dispatcher.InvokeAsync(() =>
             {
+                if (_callSessionId != streamSessionId || !_sessionActive)
+                    return;
                 if (idx >= 0 && idx < _sessionAnswerHistory.Count && string.Equals(_sessionAnswerHistory[idx].Content, content, StringComparison.Ordinal))
                     _sessionAnswerHistory[idx].ServerMessageId = id;
             });
@@ -1159,6 +1333,7 @@ public partial class MainWindow : Window
                 DesktopLogger.Warn($"Call session activate failed status={(int)res.StatusCode}");
                 return false;
             }
+            _ = RefreshCreditsFromServerAsync(force: true, showLoading: false);
             return true;
         }
         catch (Exception ex)
@@ -1234,6 +1409,7 @@ public partial class MainWindow : Window
                 DesktopLogger.Warn($"Call session extend failed status={(int)res.StatusCode}");
                 return false;
             }
+            _ = RefreshCreditsFromServerAsync(force: true, showLoading: false);
             return true;
         }
         catch (Exception ex)
@@ -1251,7 +1427,19 @@ public partial class MainWindow : Window
     private async Task EndSessionAsync(string reason)
     {
         if (!_sessionActive) return;
+        var sessionStart = _sessionStartUtc;
+        var cid = _callSessionId == Guid.Empty ? (Guid?)null : _callSessionId;
         _sessionActive = false;
+        BumpAnswerUiEpoch();
+
+        DesktopAnalytics.Track(
+            DesktopAnalyticsEventTypes.SessionEnded,
+            JsonSerializer.Serialize(new
+            {
+                reason,
+                minutes = Math.Round((DateTimeOffset.UtcNow - sessionStart).TotalMinutes, 2),
+            }),
+            cid);
 
         try
         {
@@ -1261,7 +1449,11 @@ public partial class MainWindow : Window
             _pendingEndSync = true;
             _lastServerSyncAttemptUtc = DateTimeOffset.MinValue;
             // IMPORTANT: don't use ConfigureAwait(false) here because this method updates WPF UI.
-            _pendingEndSync = !await EndCallSessionOnServerAsync();
+            var endOk = await EndCallSessionOnServerAsync();
+            _pendingEndSync = !endOk;
+            if (endOk)
+                _callSessionId = Guid.Empty;
+
             await StopSpeechSessionAsync();
             _mainUiStarted = false;
 
@@ -1272,9 +1464,12 @@ public partial class MainWindow : Window
 
             ResetSessionAnswerHistoryForInterview();
             ResetAutoAnswerTransientState();
+            ResetInterviewAnswerUi();
+            _saveTranscriptEnabled = true;
 
             StatusTextBlock.Text = reason;
             ShowSessionSetupView();
+            ResetCreateSessionDraftForNewFlow();
         }
         catch (Exception ex)
         {
@@ -1282,8 +1477,12 @@ public partial class MainWindow : Window
             // Ensure we always update UI on the dispatcher.
             await Dispatcher.InvokeAsync(() =>
             {
+                ResetSessionAnswerHistoryForInterview();
+                ResetAutoAnswerTransientState();
+                ResetInterviewAnswerUi();
                 StatusTextBlock.Text = $"End session error: {ex.Message}";
                 ShowSessionSetupView();
+                ResetCreateSessionDraftForNewFlow();
             });
         }
     }
@@ -1394,7 +1593,7 @@ public partial class MainWindow : Window
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             AppendTranscriptPlain(text);
-                            _ = LogMessageAsync("User", text);
+                            if (_saveTranscriptEnabled) _ = LogMessageAsync("User", text);
                             ScheduleMicAutoAnswer(text);
                         }
                         _partialMic = string.Empty;
@@ -1514,7 +1713,7 @@ public partial class MainWindow : Window
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             AppendTranscriptPlain(text);
-                            _ = LogMessageAsync("System", text);
+                            if (_saveTranscriptEnabled) _ = LogMessageAsync("Interviewer", text);
                             ScheduleInterviewerAutoAnswer(text);
                         }
                         _partialSystem = string.Empty;
@@ -1682,7 +1881,11 @@ public partial class MainWindow : Window
         int exStyle = GetWindowLong(handle, GWL_EXSTYLE);
         exStyle &= ~WS_EX_CLIENTEDGE;
         exStyle &= ~WS_EX_STATICEDGE;
+        // Hide from Alt+Tab: mark as tool window and ensure it's not treated as an "app window".
+        exStyle |= WS_EX_TOOLWINDOW;
+        exStyle &= ~WS_EX_APPWINDOW;
         SetWindowLong(handle, GWL_EXSTYLE, exStyle);
+        SetWindowPos(handle, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
         // Remove WS_BORDER from style so no system-drawn border
         int style = GetWindowLong(handle, GWL_STYLE);
@@ -1726,9 +1929,9 @@ public partial class MainWindow : Window
                 MicToggleButton.Content = "\uE720";
                 MicToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
                 MicToggleButton.ToolTip = "Microphone on";
-                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
-                MicToggleButton.Foreground = new SolidColorBrush(Colors.White);
-                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x05, 0x96, 0x69));
+                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x0D, 0x94, 0x88));
+                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xFD, 0xFA));
+                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x14, 0xB8, 0xA6));
                 StatusTextBlock.Text = "Mic on.";
             }
             else
@@ -1740,9 +1943,9 @@ public partial class MainWindow : Window
                 MicToggleButton.Content = "\uE720";
                 MicToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
                 MicToggleButton.ToolTip = "Microphone off";
-                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x27, 0x2A));
-                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
-                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
+                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x38));
+                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
+                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x50));
                 StatusTextBlock.Text = "Mic off.";
             }
         }
@@ -1764,9 +1967,9 @@ public partial class MainWindow : Window
                 SpeakerToggleButton.Content = "\uE767";
                 SpeakerToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
                 SpeakerToggleButton.ToolTip = "Computer audio (speaker) on";
-                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0xA5, 0xE9));
-                SpeakerToggleButton.Foreground = new SolidColorBrush(Colors.White);
-                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x02, 0x84, 0xC7));
+                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x4F, 0x46, 0xE5));
+                SpeakerToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xF2, 0xFF));
+                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x81, 0x8C, 0xF8));
                 StatusTextBlock.Text = "Speaker (computer audio) on.";
             }
             else
@@ -1779,9 +1982,9 @@ public partial class MainWindow : Window
                 SpeakerToggleButton.Content = "\uE74F";
                 SpeakerToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
                 SpeakerToggleButton.ToolTip = "Computer audio (speaker) off";
-                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x27, 0x27, 0x2A));
-                SpeakerToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xA1, 0xA1, 0xAA));
-                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5B));
+                SpeakerToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x38));
+                SpeakerToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
+                SpeakerToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x50));
                 StatusTextBlock.Text = "Speaker off.";
             }
         }
@@ -2177,6 +2380,27 @@ public partial class MainWindow : Window
         UpdateAnswerHistoryNav();
     }
 
+    private void BumpAnswerUiEpoch()
+    {
+        Interlocked.Increment(ref _answerUiEpoch);
+        Volatile.Write(ref _answerStreamLeaseEpoch, 0);
+    }
+
+    /// <summary>Clears the answer rich text, collapses the answer panel, and drops the in-flight flag (e.g. after session end).</summary>
+    private void ResetInterviewAnswerUi()
+    {
+        _answerGenerationInFlight = false;
+        ClearAiAnswer();
+        if (FindName("AnswerSectionPanel") is UIElement panel)
+        {
+            panel.Visibility = Visibility.Collapsed;
+            SetAnswerSectionRowHeight(collapsed: true);
+        }
+
+        UpdateAiAnswerBodyMaxHeight();
+        UpdateAnswerHistoryNav();
+    }
+
     private void SetAnswerSectionRowHeight(bool collapsed)
     {
         if (FindName("MainContentGrid") is System.Windows.Controls.Grid grid
@@ -2224,15 +2448,40 @@ public partial class MainWindow : Window
             Content = JsonContent.Create(payload)
         };
 
-        await ExecuteAnswerStreamCoreAsync(request, displayQuestionForUi).ConfigureAwait(false);
+        await ExecuteAnswerStreamCoreAsync(request, displayQuestionForUi, aiChannel: "transcript").ConfigureAwait(false);
     }
 
     private async Task ExecuteAnswerStreamCoreAsync(
         HttpRequestMessage request,
         string? displayQuestionForUi,
         string connectingMessage = "Connecting to AI...",
-        string generatingMessage = "Generating answer...")
+        string generatingMessage = "Generating answer...",
+        string? aiChannel = null)
     {
+        var answerEpochSnap = Volatile.Read(ref _answerUiEpoch);
+        var answerStreamSessionId = _callSessionId;
+
+        bool AnswerStreamStillValidForSession() =>
+            Volatile.Read(ref _answerUiEpoch) == answerEpochSnap
+            && _callSessionId == answerStreamSessionId
+            && _sessionActive;
+
+        void ReleaseAnswerStreamLeaseAndChrome()
+        {
+            if (Volatile.Read(ref _answerStreamLeaseEpoch) != answerEpochSnap)
+                return;
+
+            Volatile.Write(ref _answerStreamLeaseEpoch, 0);
+            if (!_mainUiStarted)
+                return;
+
+            _answerGenerationInFlight = false;
+            AiAnswerButton.IsEnabled = true;
+            AskButton.IsEnabled = true;
+            ScreenshotAiButton.IsEnabled = true;
+            UpdateAnswerHistoryNav();
+        }
+
         try
         {
             _currentAnswerDisplayHeading = string.IsNullOrWhiteSpace(displayQuestionForUi)
@@ -2241,6 +2490,9 @@ public partial class MainWindow : Window
 
             await Dispatcher.InvokeAsync(() =>
             {
+                if (!AnswerStreamStillValidForSession())
+                    return;
+
                 AiAnswerButton.IsEnabled = false;
                 AskButton.IsEnabled = false;
                 ScreenshotAiButton.IsEnabled = false;
@@ -2253,12 +2505,33 @@ public partial class MainWindow : Window
                 }
 
                 _answerGenerationInFlight = true;
+                Volatile.Write(ref _answerStreamLeaseEpoch, answerEpochSnap);
                 UpdateAnswerHistoryNav();
             });
 
+            if (!AnswerStreamStillValidForSession())
+            {
+                await Dispatcher.InvokeAsync(ReleaseAnswerStreamLeaseAndChrome);
+                return;
+            }
+
             _ = Dispatcher.BeginInvoke(new Action(UpdateAiAnswerBodyMaxHeight), DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => BeginStreamingAnswerDisplay(_currentAnswerDisplayHeading));
-            await Dispatcher.InvokeAsync(() => { StatusTextBlock.Text = generatingMessage; });
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (AnswerStreamStillValidForSession())
+                    BeginStreamingAnswerDisplay(_currentAnswerDisplayHeading);
+            });
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (AnswerStreamStillValidForSession())
+                    StatusTextBlock.Text = generatingMessage;
+            });
+
+            if (!AnswerStreamStillValidForSession())
+            {
+                await Dispatcher.InvokeAsync(ReleaseAnswerStreamLeaseAndChrome);
+                return;
+            }
 
             using var response = await _apiClient
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
@@ -2298,6 +2571,8 @@ public partial class MainWindow : Window
 
                 await Dispatcher.InvokeAsync(() =>
                 {
+                    if (!AnswerStreamStillValidForSession())
+                        return;
                     if (_streamingAnswerRun != null)
                         _streamingAnswerRun.Text += delta;
                 }, DispatcherPriority.Background);
@@ -2306,6 +2581,9 @@ public partial class MainWindow : Window
             var completion = completionSb.ToString();
             await Dispatcher.InvokeAsync(() =>
             {
+                if (!AnswerStreamStillValidForSession())
+                    return;
+
                 StatusTextBlock.Text = "Formatting answer...";
                 RenderAiAnswer(completion, _currentAnswerDisplayHeading);
                 RegisterSuccessfulAnswerInHistory(completion);
@@ -2323,13 +2601,29 @@ public partial class MainWindow : Window
                 UpdateAnswerHistoryNav();
             });
 
-            if (!string.IsNullOrWhiteSpace(completion))
-                await AttachServerIdToAppendedAssistantAsync().ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(completion) && AnswerStreamStillValidForSession())
+            {
+                await AttachServerIdToAppendedAssistantAsync(answerStreamSessionId).ConfigureAwait(false);
+                if (_callSessionId != Guid.Empty && _callSessionId == answerStreamSessionId)
+                {
+                    DesktopAnalytics.Track(
+                        DesktopAnalyticsEventTypes.AiResponseGenerated,
+                        JsonSerializer.Serialize(new
+                        {
+                            channel = aiChannel ?? "unknown",
+                            contentLength = completion.Length,
+                        }),
+                        _callSessionId);
+                }
+            }
         }
         catch (Exception ex)
         {
             await Dispatcher.InvokeAsync(() =>
             {
+                if (!AnswerStreamStillValidForSession())
+                    return;
+
                 RenderAiAnswer($"Error:\n- {ex.Message}", _currentAnswerDisplayHeading);
                 if (FindName("AnswerSectionPanel") is System.Windows.UIElement p)
                 {
@@ -2344,14 +2638,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            await Dispatcher.InvokeAsync(() =>
-            {
-                _answerGenerationInFlight = false;
-                AiAnswerButton.IsEnabled = true;
-                AskButton.IsEnabled = true;
-                ScreenshotAiButton.IsEnabled = true;
-                UpdateAnswerHistoryNav();
-            });
+            await Dispatcher.InvokeAsync(ReleaseAnswerStreamLeaseAndChrome);
         }
     }
 
@@ -2387,11 +2674,15 @@ public partial class MainWindow : Window
             Content = JsonContent.Create(payload)
         };
 
+        var cid = _callSessionId == Guid.Empty ? (Guid?)null : _callSessionId;
+        DesktopAnalytics.Track(DesktopAnalyticsEventTypes.AnalyzeScreenRequested, null, cid);
+
         await ExecuteAnswerStreamCoreAsync(
             request,
             "Screenshot",
             connectingMessage: "Sending screenshot…",
-            generatingMessage: "Reading screen & generating answer…").ConfigureAwait(false);
+            generatingMessage: "Reading screen & generating answer…",
+            aiChannel: "screenshot").ConfigureAwait(false);
     }
 
     private void ClearAiAnswer()
@@ -2657,10 +2948,34 @@ public partial class MainWindow : Window
             _restoreChip = null;
         }
 
+        // Match EndSessionAsync: notify the server so the session is marked ended and AI notes can run
+        // (SaveTranscript on the API). Otherwise closing via ✕ leaves an "Active" session with no notes.
+        var cid = _callSessionId;
+        var shouldPostEnd = cid != Guid.Empty && (_sessionActive || _pendingEndSync);
+
+        BumpAnswerUiEpoch();
         _sessionActive = false;
         try { _sessionTimer?.Stop(); } catch { /* ignore */ }
+
+        if (shouldPostEnd)
+        {
+            try
+            {
+                if (await EndCallSessionOnServerAsync().ConfigureAwait(false))
+                {
+                    _pendingEndSync = false;
+                    _callSessionId = Guid.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                DesktopLogger.Warn($"Call session end on shutdown: {ex.Message}");
+            }
+        }
+
         await StopSpeechSessionAsync();
         _loginFlowLock.Dispose();
+        _saveTranscriptEnabled = true;
 
         base.OnClosed(e);
     }

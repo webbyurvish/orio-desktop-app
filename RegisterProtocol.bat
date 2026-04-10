@@ -16,7 +16,7 @@ if not defined EXE_PATH (
 )
 
 echo Registering orioai:// with: %EXE_PATH%
-reg add "HKCU\Software\Classes\orioai" /ve /d "URL:Orio AI Session" /f
+reg add "HKCU\Software\Classes\orioai" /ve /d "URL:Smeed AI Session" /f
 reg add "HKCU\Software\Classes\orioai" /v "URL Protocol" /d "" /f
 reg add "HKCU\Software\Classes\orioai\shell\open\command" /ve /d "\"%EXE_PATH%\" \"%%1\"" /f
 echo Done. Try "Desktop App" in the dashboard again.

@@ -11,14 +11,16 @@
 
             <Style TargetType="ToolTip" BasedOn="{StaticResource OrioTooltipStyle}"/>
 
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
             <Style x:Key="MenuRowDanger" TargetType="Border">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Padding" Value="14,12"/>
+                <Setter Property="Padding" Value="10,8"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="CornerRadius" Value="0,0,12,12"/>
+                <Setter Property="CornerRadius" Value="0,0,10,10"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#FEF2F2"/>
+                        <Setter Property="Background" Value="#28F87171"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>

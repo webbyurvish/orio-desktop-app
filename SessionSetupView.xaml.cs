@@ -75,7 +75,14 @@ public partial class SessionSetupView : UserControl
     private void Header_MoveClicked(object? sender, RoutedEventArgs e)
     {
         MoreOptionsPopup.IsOpen = false;
-        MoveOptionsPopup.IsOpen = !MoveOptionsPopup.IsOpen;
+        MoveOptionsPopup.IsOpen = false;
+
+        var owner = Window.GetWindow(this);
+        if (owner == null) return;
+
+        var picked = MoveOverlayWindow.PickSlot(owner);
+        if (picked != null)
+            WindowSlotRequested?.Invoke(picked.Value);
     }
 
     private void EmitWindowSlot(StartupWindowSlot slot, MouseButtonEventArgs e)

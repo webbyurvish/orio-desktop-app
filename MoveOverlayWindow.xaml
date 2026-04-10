@@ -1,0 +1,164 @@
+<Window x:Class="AiInterviewAssistant.MoveOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Move window"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Focusable="True"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewKeyUp="Window_PreviewKeyUp"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <!-- Aurora dot: teal → violet glow -->
+        <Style x:Key="MoveOverlaySlotBorder" TargetType="Border">
+            <Setter Property="Width" Value="268"/>
+            <Setter Property="Height" Value="168"/>
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="Background" Value="#241A1F2E"/>
+            <Setter Property="BorderBrush" Value="#40A78BFA"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#321E2436"/>
+                    <Setter Property="BorderBrush" Value="#66818CF8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Blurred screenshot background -->
+        <Image x:Name="BackgroundImage" Stretch="Fill" Opacity="0.95">
+            <Image.Effect>
+                <BlurEffect Radius="22" KernelType="Gaussian"/>
+            </Image.Effect>
+        </Image>
+
+        <!-- Dark veil for contrast -->
+        <Border Background="#B0050508"/>
+
+        <!-- Selector + instructions: centered as a group -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- 2×3 selector -->
+            <Grid HorizontalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+            <Border x:Name="SlotTopLeft" Grid.Row="0" Grid.Column="0" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot1_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#5EEAD4" Offset="0"/>
+                            <GradientStop Color="#A78BFA" Offset="0.55"/>
+                            <GradientStop Color="#C084FC" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#2DD4BF" Opacity="0.65"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+            <Border x:Name="SlotTopCenter" Grid.Row="0" Grid.Column="1" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot2_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#5EEAD4" Offset="0"/>
+                            <GradientStop Color="#818CF8" Offset="0.5"/>
+                            <GradientStop Color="#A78BFA" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#6366F1" Opacity="0.6"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+            <Border x:Name="SlotTopRight" Grid.Row="0" Grid.Column="2" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot3_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#818CF8" Offset="0"/>
+                            <GradientStop Color="#C084FC" Offset="0.55"/>
+                            <GradientStop Color="#E879F9" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#A78BFA" Opacity="0.65"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+
+            <Border x:Name="SlotBottomLeft" Grid.Row="1" Grid.Column="0" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot4_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#14B8A6" Offset="0"/>
+                            <GradientStop Color="#6366F1" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#0D9488" Opacity="0.55"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+            <Border x:Name="SlotBottomCenter" Grid.Row="1" Grid.Column="1" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot5_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#2DD4BF" Offset="0"/>
+                            <GradientStop Color="#7C3AED" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#7C3AED" Opacity="0.5"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+            <Border x:Name="SlotBottomRight" Grid.Row="1" Grid.Column="2" Style="{StaticResource MoveOverlaySlotBorder}"
+                    MouseLeftButtonDown="Slot6_Click">
+                <Ellipse Width="26" Height="26" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.35,0.35" Center="0.45,0.45" RadiusX="0.85" RadiusY="0.85">
+                            <GradientStop Color="#A78BFA" Offset="0"/>
+                            <GradientStop Color="#F472B6" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#E879F9" Opacity="0.6"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Border>
+            </Grid>
+
+            <!-- Instructions directly under the grid -->
+            <Border Margin="0,10,0,0"
+                    CornerRadius="12" Background="#1E12121C" BorderBrush="#33818CF8" BorderThickness="1" Padding="16,12">
+                <TextBlock Foreground="#E2E8F0" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="720" LineHeight="20">
+                    <Run Text="Hold "/><Run Text="Ctrl" FontWeight="Bold"/><Run Text=" + arrow keys: "/>
+                    <Run Text="↑+←"/><Run Text=" top-left, "/><Run Text="↑"/><Run Text=" top-center, "/><Run Text="↑+→"/><Run Text=" top-right — "/>
+                    <Run Text="↓+←"/><Run Text=" bottom-left, "/><Run Text="↓"/><Run Text=" bottom-center, "/><Run Text="↓+→"/><Run Text=" bottom-right. "/>
+                    <Run Text="Esc"/><Run Text=" cancels."/>
+                </TextBlock>
+            </Border>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -13,9 +13,11 @@ public partial class CreateSessionStep2View : UserControl
     private bool _languagesLoaded;
 
     private sealed record SpeechLocaleOption(string Locale, string Label);
+    private const string DefaultExtraContext =
+        "Keep answers to the point and with a coding example and make it cold so interviewer should be happy";
 
-    // Curated list of commonly used locales supported by Azure Speech-to-Text (BCP-47).
-    // Intentionally excludes most country variants to keep the dropdown simple.
+    // BCP-47 locales for interviews: Azure Speech-to-Text + Azure OpenAI (keep in sync with
+    // orio-web-app/src/constants/azureSpeechSttLocales.ts). Excludes variants we don’t use.
     private static readonly SpeechLocaleOption[] AzureSpeechSttLocales =
     [
         // Pinned at top
@@ -154,7 +156,14 @@ public partial class CreateSessionStep2View : UserControl
     private void Header_MoveClicked(object? sender, RoutedEventArgs e)
     {
         MoreOptionsPopup.IsOpen = false;
-        MoveOptionsPopup.IsOpen = !MoveOptionsPopup.IsOpen;
+        MoveOptionsPopup.IsOpen = false;
+
+        var owner = Window.GetWindow(this);
+        if (owner == null) return;
+
+        var picked = MoveOverlayWindow.PickSlot(owner);
+        if (picked != null)
+            WindowSlotRequested?.Invoke(picked.Value);
     }
 
     private void EmitWindowSlot(StartupWindowSlot slot, MouseButtonEventArgs e)
@@ -246,6 +255,17 @@ public partial class CreateSessionStep2View : UserControl
     }
 
     public bool SaveTranscript => SaveTranscriptToggle.IsChecked ?? false;
+
+    public void ResetForNewSession()
+    {
+        EnsureLanguageOptionsLoaded();
+        LanguageComboBox.SelectedIndex = 0; // English (India)
+
+        SimpleLanguageToggle.IsChecked = true;
+        ExtraContextTextBox.Text = DefaultExtraContext;
+        AiModelComboBox.SelectedIndex = 0;
+        SaveTranscriptToggle.IsChecked = true;
+    }
 
     public void SetSessionMode(bool isFreeSession)
     {

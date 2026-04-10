@@ -8,93 +8,74 @@
              Background="Transparent"
              FontFamily="Segoe UI">
 
-    <UserControl.Resources>
-        <Style x:Key="MenuRowButton" TargetType="Border">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F1F5F9"/></Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="MenuTinyIconBtn" TargetType="Border">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F8FAFC"/></Trigger>
-            </Style.Triggers>
-        </Style>
-    </UserControl.Resources>
-
-    <Border Background="#FFFFFF" CornerRadius="20" BorderBrush="#E2E8F0" BorderThickness="1" Width="520" MinHeight="200" HorizontalAlignment="Center" VerticalAlignment="Center"
-            Effect="{StaticResource OrioCardDropShadow}">
+    <Border Style="{StaticResource OrioShellCardBorder}"
+            Width="520"
+            MinHeight="180"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
         <Grid>
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
-            <local:AppHeaderView x:Name="SharedHeader" Grid.Row="0" CreditsText="2 Credits"
+            <local:AppHeaderView x:Name="SharedHeader" Grid.Row="0" CreditsText="{Binding CreditsText, Source={x:Static local:CreditsState.Current}}"
                                  MoreClicked="Header_MoreClicked" MoveClicked="Header_MoveClicked"
-                                 MinimizeClicked="Header_MinimizeClicked" CloseClicked="Header_CloseClicked"
-                                 HeaderBackground="#E7EBF3"/>
+                                 MinimizeClicked="Header_MinimizeClicked" CloseClicked="Header_CloseClicked"/>
 
-            <Border Grid.Row="1" Padding="10,9,10,10" Background="White" CornerRadius="0,0,20,20">
+            <Border Grid.Row="1" Style="{StaticResource OrioShellBodyBorder}">
                 <StackPanel>
-                    <Border Style="{StaticResource OrioTabSwitcherBarBorder}" Margin="0,0,0,12">
+                    <Border Style="{StaticResource OrioTabSwitcherBarBorder}">
                         <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="White" CornerRadius="10" BorderBrush="#818CF8" BorderThickness="1.5" Padding="10,9">
-                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="#312E81" FontSize="14" FontWeight="SemiBold"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource OrioTabSegmentSelected}">
+                                <TextBlock Text="Create" HorizontalAlignment="Center" Foreground="{StaticResource OrioTextBrush}" FontSize="13" FontWeight="SemiBold"/>
                             </Border>
-                            <Border Grid.Column="1" Background="Transparent" CornerRadius="10" Padding="10,9" Cursor="Hand" MouseLeftButtonDown="PastSessionsTab_Click">
-                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="#475569" FontSize="14" FontWeight="SemiBold"/>
+                            <Border Grid.Column="2" Style="{StaticResource OrioTabSegmentIdle}" MouseLeftButtonDown="PastSessionsTab_Click">
+                                <TextBlock Text="Past Sessions" HorizontalAlignment="Center" Foreground="{StaticResource OrioMutedBrush}" FontSize="13" FontWeight="SemiBold"/>
                             </Border>
                         </Grid>
                     </Border>
 
                     <Border Style="{StaticResource OrioInnerFormPanelBorder}">
                         <StackPanel>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <TextBlock Text="Language" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
-                                        <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
-                                            <Border.ToolTip>
-                                                <ToolTip>
-                                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                               Text="Language used for transcription and for AI answers in this session. Pick the language you and the interviewer mainly use."/>
-                                                </ToolTip>
-                                            </Border.ToolTip>
-                                            <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <ComboBox x:Name="LanguageComboBox" Style="{StaticResource OrioComboBoxStyle}" SelectedIndex="0" MinWidth="260">
-                                        <ComboBox.ToolTip>
+                            <StackPanel Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="Language" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0" VerticalAlignment="Center">
+                                        <Border.ToolTip>
                                             <ToolTip>
                                                 <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                           Text="Applies to speech recognition and model output. You can change models separately below."/>
+                                                           Text="Language used for transcription and for AI answers in this session. Pick the language you and the interviewer mainly use."/>
                                             </ToolTip>
-                                        </ComboBox.ToolTip>
-                                    </ComboBox>
+                                        </Border.ToolTip>
+                                        <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
+                                    </Border>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Top">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,6">
-                                        <TextBlock Text="Simple Language" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
-                                        <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
+                                <ComboBox x:Name="LanguageComboBox" Style="{StaticResource OrioComboBoxStyle}" SelectedIndex="0" Margin="0,0,0,12">
+                                    <ComboBox.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                       Text="Applies to speech recognition and model output. You can change models separately below."/>
+                                        </ToolTip>
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Simple Language" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0" VerticalAlignment="Center">
                                             <Border.ToolTip>
                                                 <ToolTip>
                                                     <TextBlock Style="{StaticResource OrioTooltipBodyText}"
                                                                Text="When on, answers use shorter sentences and plainer words—useful if you want easy-to-say replies in the interview."/>
                                                 </ToolTip>
                                             </Border.ToolTip>
-                                            <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                         </Border>
                                     </StackPanel>
-                                    <ToggleButton x:Name="SimpleLanguageToggle" Style="{StaticResource OrioSwitchToggleStyle}" HorizontalAlignment="Right" IsChecked="True">
+                                    <ToggleButton x:Name="SimpleLanguageToggle" Grid.Column="1" Style="{StaticResource OrioSwitchToggleStyle}" VerticalAlignment="Center" IsChecked="True">
                                         <ToggleButton.ToolTip>
                                             <ToolTip>
                                                 <TextBlock Style="{StaticResource OrioTooltipBodyText}"
@@ -102,11 +83,11 @@
                                             </ToolTip>
                                         </ToggleButton.ToolTip>
                                     </ToggleButton>
-                                </StackPanel>
-                            </Grid>
+                                </Grid>
+                            </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="Extra Context/Instructions" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="Extra Context/Instructions" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                     <Border.ToolTip>
                                         <ToolTip>
@@ -114,14 +95,13 @@
                                                        Text="Steers tone and content: e.g. be concise, include code, sound confident, or match a seniority level. This is sent with every AI answer request."/>
                                         </ToolTip>
                                     </Border.ToolTip>
-                                    <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                 </Border>
                             </StackPanel>
                             <Border Style="{StaticResource OrioFieldHostBorder}" Margin="0,0,0,10">
                                 <TextBox x:Name="ExtraContextTextBox" Text="Keep answers to the point and with a coding example and make it cold so interviewer should be happy"
                                          Style="{StaticResource OrioFormMultilineTextBoxStyle}"
-                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="54" MaxHeight="72"
-                                         Foreground="#475569">
+                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="54" MaxHeight="72">
                                     <TextBox.ToolTip>
                                         <ToolTip>
                                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
@@ -132,7 +112,7 @@
                             </Border>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <iconPacks:PackIconMaterial Kind="BriefcaseOutline" Width="16" Height="16" Foreground="#334155" Margin="0,0,6,0"
+                                <iconPacks:PackIconMaterial Kind="BriefcaseOutline" Width="16" Height="16" Foreground="#CBD5E1" Margin="0,0,6,0"
                                                             ToolTipService.ShowDuration="60000">
                                     <ToolTipService.ToolTip>
                                         <ToolTip>
@@ -141,7 +121,7 @@
                                         </ToolTip>
                                     </ToolTipService.ToolTip>
                                 </iconPacks:PackIconMaterial>
-                                <TextBlock Text="AI Model" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="AI Model" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                 <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                     <Border.ToolTip>
                                         <ToolTip>
@@ -149,14 +129,14 @@
                                                        Text="Balances speed and depth. “Mini” is recommended for live interviews; upgrade if you need richer explanations and can wait a bit longer."/>
                                         </ToolTip>
                                     </Border.ToolTip>
-                                    <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                 </Border>
                             </StackPanel>
                             <ComboBox x:Name="AiModelComboBox" Style="{StaticResource OrioComboBoxStyle}" SelectedIndex="0" Margin="0,0,0,10">
                                 <ComboBox.ToolTip>
                                     <ToolTip>
                                         <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                   Text="Your choice applies to this session only. Billing or limits depend on your Orio plan and API usage."/>
+                                                   Text="Your choice applies to this session only. Billing or limits depend on your Smeed AI plan and API usage."/>
                                     </ToolTip>
                                 </ComboBox.ToolTip>
                                 <ComboBoxItem Content="GPT-4.1 Mini    Recommended    Fast"/>
@@ -167,7 +147,7 @@
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Auto Generate AI Response" Foreground="#334155" FontSize="15" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Auto Generate AI Response" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
                                     <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
                                         <Border.ToolTip>
                                             <ToolTip>
@@ -175,7 +155,7 @@
                                                            Text="When on, the main interview window can detect questions from audio and stream suggested answers. Turn off if you only want manual “AI Answer”."/>
                                             </ToolTip>
                                         </Border.ToolTip>
-                                        <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                     </Border>
                                 </StackPanel>
                                 <ToggleButton Grid.Column="1" Style="{StaticResource OrioSwitchToggleStyle}" IsChecked="True">
@@ -191,7 +171,7 @@
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Save Transcript" Foreground="#334155" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Save Transcript" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0" VerticalAlignment="Center">
                                         <Border.ToolTip>
                                             <ToolTip>
@@ -199,7 +179,7 @@
                                                            Text="When enabled, conversation text from the session can be stored in your account for review (subject to your plan and privacy settings)."/>
                                             </ToolTip>
                                         </Border.ToolTip>
-                                        <TextBlock Text="i" FontSize="11" FontWeight="Bold" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
                                     </Border>
                                 </StackPanel>
                                 <ToggleButton x:Name="SaveTranscriptToggle" Grid.Column="1" Style="{StaticResource OrioSwitchToggleStyle}">
@@ -214,14 +194,18 @@
 
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="1.2*"/></Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Background="Transparent" CornerRadius="10" BorderBrush="#C7D2FE" BorderThickness="1.5" Padding="10" Cursor="Hand" MouseLeftButtonDown="Back_Click">
-                                    <TextBlock Text="Back" Foreground="#4338CA" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <Border Grid.Column="0" Style="{StaticResource OrioOutlineSecondaryBtn}" Margin="0,0,6,0" MouseLeftButtonDown="Back_Click">
+                                    <TextBlock Text="Back" Foreground="#A5B4FC" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                 </Border>
-                                <Border Grid.Column="1" CornerRadius="11" Padding="10" Cursor="Hand" MouseLeftButtonDown="CreateSession_Click" Margin="8,0,0,0">
+                                <Border Grid.Column="1" CornerRadius="9" Padding="9,8" Cursor="Hand" MouseLeftButtonDown="CreateSession_Click" Margin="6,0,0,0">
                                     <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5"><GradientStop Color="#312E81" Offset="0"/><GradientStop Color="#1E1B4B" Offset="1"/></LinearGradientBrush>
+                                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                            <GradientStop Color="#0D9488" Offset="0"/>
+                                            <GradientStop Color="#6366F1" Offset="0.55"/>
+                                            <GradientStop Color="#7C3AED" Offset="1"/>
+                                        </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock x:Name="CreateSessionButtonText" Text="Create Free Session" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="CreateSessionButtonText" Text="Create Free Session" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                 </Border>
                             </Grid>
                         </StackPanel>
@@ -230,20 +214,30 @@
             </Border>
 
             <Popup x:Name="MoreOptionsPopup" Placement="Bottom" VerticalOffset="8" HorizontalOffset="-6" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
-                <Border MinWidth="272" MaxWidth="340" Background="#FFFFFF" CornerRadius="16" BorderBrush="#E2E8F0" BorderThickness="1" Padding="0" SnapsToDevicePixels="True">
-                    <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="3" Direction="270" Opacity="0.12" Color="#0F172A"/></Border.Effect>
-                    <StackPanel Margin="4,6,4,8">
-                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="12,12,0,0" MouseLeftButtonDown="MenuDashboard_Click">
+                <Border Style="{StaticResource OrioPopupShell}" MinWidth="220" MaxWidth="260" Padding="0">
+                    <StackPanel Margin="4,4,4,4">
+                        <Border Style="{StaticResource OrioPopupEmailChip}"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding Email, Source={x:Static local:DesktopUserState.Current}}"
+                                       FontSize="12.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource OrioTextBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Border Height="1" Background="{StaticResource OrioBorderSubtleBrush}" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource MenuRowButton}" CornerRadius="10,10,0,0" MouseLeftButtonDown="MenuDashboard_Click">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="20" Height="20" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <TextBlock Text="Dashboard" FontSize="14.5" FontWeight="SemiBold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="18" Height="18" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Dashboard" FontSize="13.5" FontWeight="SemiBold" Foreground="{StaticResource OrioTextBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
-                        <Border Height="1" Background="#E2E8F0" Margin="14,6,14,0"/>
-                        <Border Style="{StaticResource MenuRowDanger}" MouseLeftButtonDown="MenuLogout_Click">
+                        <Border Height="1" Background="{StaticResource OrioBorderSubtleBrush}" Margin="0,6,0,0"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}"/>
+                        <Border Style="{StaticResource MenuRowDanger}" CornerRadius="0,0,10,10" MouseLeftButtonDown="MenuLogout_Click"
+                                Visibility="{Binding HasEmail, Source={x:Static local:DesktopUserState.Current}, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="Logout" Width="20" Height="20" Foreground="#DC2626" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <TextBlock Text="Logout" FontSize="14.5" FontWeight="SemiBold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                <iconPacks:PackIconMaterial Kind="Logout" Width="18" Height="18" Foreground="#F87171" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Logout" FontSize="13.5" FontWeight="SemiBold" Foreground="#FCA5A5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -251,17 +245,16 @@
             </Popup>
 
             <Popup x:Name="MoveOptionsPopup" Placement="Bottom" VerticalOffset="6" HorizontalOffset="-78" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
-                <Border Background="#FFFFFF" CornerRadius="14" BorderBrush="#E2E8F0" BorderThickness="1" Padding="12" SnapsToDevicePixels="True">
-                    <Border.Effect><DropShadowEffect BlurRadius="20" ShadowDepth="2" Direction="270" Opacity="0.14" Color="#0F172A"/></Border.Effect>
+                <Border Style="{StaticResource OrioPopupShell}" Padding="10">
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="20" Height="20" Foreground="#334155" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowTopLeft" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowUp" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveTopRight_Click"><iconPacks:PackIconMaterial Kind="ArrowTopRight" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomLeft_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomLeft" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomCenter_Click"><iconPacks:PackIconMaterial Kind="ArrowDown" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource OrioMoveSlotBtnStyle}" MouseLeftButtonDown="MoveBottomRight_Click"><iconPacks:PackIconMaterial Kind="ArrowBottomRight" Width="17" Height="17" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                     </Grid>
                 </Border>
             </Popup>

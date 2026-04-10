@@ -2,12 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:AiInterviewAssistant"
-        Title="Orio AI"
+        Title="Smeed AI"
         Width="720" MinHeight="200"
         SizeToContent="Height"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        ShowInTaskbar="False"
         Topmost="True"
         ResizeMode="NoResize"
         FocusVisualStyle="{x:Null}"
@@ -17,14 +18,14 @@
     <Window.Resources>
         <!-- Shared chrome button chrome -->
         <Style x:Key="RoundedButton" TargetType="Button">
-            <Setter Property="Background" Value="#2A2A3A"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="#2212121C"/>
+            <Setter Property="Foreground" Value="{StaticResource OrioTextBrush}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Padding" Value="9,5"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#4B5563"/>
+            <Setter Property="BorderBrush" Value="#33818CF8"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
@@ -33,7 +34,7 @@
                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="9" Padding="{TemplateBinding Padding}">
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -52,18 +53,18 @@
             </Setter>
         </Style>
         <Style x:Key="ClearButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
-            <Setter Property="Background" Value="#374151"/>
-            <Setter Property="Foreground" Value="#E5E7EB"/>
-            <Setter Property="BorderBrush" Value="#6B7280"/>
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
         </Style>
         <!-- Compact row actions: smaller chrome, slightly larger readable type -->
         <Style x:Key="CompactActionButtonBase" TargetType="Button">
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="MinHeight" Value="30"/>
-            <Setter Property="MaxHeight" Value="30"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="MaxHeight" Value="28"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -93,46 +94,46 @@
             </Setter>
         </Style>
         <Style x:Key="CompactClearButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactActionButtonBase}">
-            <Setter Property="Background" Value="#374151"/>
-            <Setter Property="Foreground" Value="#F3F4F6"/>
-            <Setter Property="BorderBrush" Value="#6B7280"/>
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
             <Setter Property="MinWidth" Value="56"/>
         </Style>
         <Style x:Key="CompactPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactActionButtonBase}">
-            <Setter Property="Background" Value="#7C3AED"/>
+            <Setter Property="Background" Value="#5B21B6"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#6D28D9"/>
-            <Setter Property="MinWidth" Value="84"/>
+            <Setter Property="BorderBrush" Value="#7C3AED"/>
+            <Setter Property="MinWidth" Value="76"/>
         </Style>
         <Style x:Key="CompactAskButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactActionButtonBase}">
-            <Setter Property="Background" Value="#0D9488"/>
+            <Setter Property="Background" Value="#0F766E"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#0F766E"/>
-            <Setter Property="MinWidth" Value="52"/>
+            <Setter Property="BorderBrush" Value="#14B8A6"/>
+            <Setter Property="MinWidth" Value="46"/>
         </Style>
         <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
-            <Setter Property="Background" Value="#7C3AED"/>
+            <Setter Property="Background" Value="#5B21B6"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#6D28D9"/>
+            <Setter Property="BorderBrush" Value="#7C3AED"/>
         </Style>
         <Style x:Key="AskButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
-            <Setter Property="Background" Value="#0D9488"/>
+            <Setter Property="Background" Value="#0F766E"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#0F766E"/>
+            <Setter Property="BorderBrush" Value="#14B8A6"/>
         </Style>
         <Style x:Key="CloseIconButton" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
-            <Setter Property="Background" Value="#27272A"/>
-            <Setter Property="Foreground" Value="#A1A1AA"/>
+            <Setter Property="Background" Value="#1E1E2A"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
             <Setter Property="Width" Value="28"/>
             <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Content" Value="✕"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="BorderBrush" Value="#52525B"/>
+            <Setter Property="BorderBrush" Value="#3F3F50"/>
         </Style>
         <Style x:Key="MainWindowCloseButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="15"/>
@@ -147,7 +148,7 @@
                         <Border x:Name="bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="9">
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -163,8 +164,8 @@
             </Setter>
         </Style>
         <Style x:Key="EndSessionToolbarStyle" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="12"/>
@@ -178,7 +179,7 @@
                         <Border x:Name="bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="9">
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -197,15 +198,15 @@
             </Setter>
         </Style>
         <Style x:Key="HideToolbarButtonStyle" TargetType="Button">
-            <Setter Property="MinWidth" Value="52"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="MinWidth" Value="48"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="9,0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="Background" Value="#4F46E5"/>
-            <Setter Property="BorderBrush" Value="#4338CA"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="#3730A3"/>
+            <Setter Property="BorderBrush" Value="#6366F1"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -213,15 +214,16 @@
                         <Border x:Name="bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="9" Padding="{TemplateBinding Padding}">
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#6366F1"/>
+                                <Setter TargetName="bd" Property="Background" Value="#4F46E5"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#818CF8"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#4338CA"/>
+                                <Setter TargetName="bd" Property="Background" Value="#312E81"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -229,8 +231,8 @@
             </Setter>
         </Style>
         <Style x:Key="ToolbarIconCircleStyle" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -240,7 +242,7 @@
                         <Border x:Name="bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="9">
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -269,10 +271,10 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Grid Width="42" Height="22" SnapsToDevicePixels="True">
                             <Border x:Name="Track" CornerRadius="11" Height="22"
-                                    Background="#3F3F46" BorderBrush="#52525B" BorderThickness="1"/>
+                                    Background="#2A2A38" BorderBrush="#3F3F50" BorderThickness="1"/>
                             <Border x:Name="Thumb" Width="18" Height="18" CornerRadius="9"
                                     HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Margin="3,0,0,0" Background="#FAFAFA" BorderBrush="#D4D4D8" BorderThickness="1">
+                                    Margin="3,0,0,0" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1">
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.25" Color="#000000"/>
                                 </Border.Effect>
@@ -286,8 +288,8 @@
                                 <Setter TargetName="Track" Property="Opacity" Value="0.85"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="#059669"/>
-                                <Setter TargetName="Track" Property="BorderBrush" Value="#047857"/>
+                                <Setter TargetName="Track" Property="Background" Value="#0D9488"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="#14B8A6"/>
                                 <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
                                 <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
                             </Trigger>
@@ -309,7 +311,7 @@
                                 <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
                             </Grid.RowDefinitions>
                             <Border x:Name="TrackBackground" Grid.Row="1" Height="5" CornerRadius="3"
-                                    Background="#3F3F46" BorderThickness="0" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                                    Background="#2A2A38" BorderThickness="0" VerticalAlignment="Center" Margin="0,0,0,0"/>
                             <Track x:Name="PART_Track" Grid.Row="1" VerticalAlignment="Center">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Height="0" Width="0" Opacity="0"/>
@@ -321,7 +323,7 @@
                                     <Thumb x:Name="Thumb" Width="16" Height="16" Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Ellipse Fill="#A5B4FC" Stroke="#6366F1" StrokeThickness="1.5"/>
+                                                <Ellipse Fill="#A5B4FC" Stroke="#818CF8" StrokeThickness="1.5"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -333,29 +335,30 @@
             </Setter>
         </Style>
         <Style x:Key="AnswerNavButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="Background" Value="#4338CA"/>
+            <Setter Property="Foreground" Value="#EEF2FF"/>
+            <Setter Property="Background" Value="#312E81"/>
             <Setter Property="BorderBrush" Value="#6366F1"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="hb" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="hb" Property="Background" Value="#6366F1"/>
+                                <Setter TargetName="hb" Property="Background" Value="#4F46E5"/>
+                                <Setter TargetName="hb" Property="BorderBrush" Value="#A5B4FC"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="hb" Property="Background" Value="#3730A3"/>
+                                <Setter TargetName="hb" Property="Background" Value="#1E1B4B"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="#64748B"/>
@@ -375,7 +378,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ScrollBar}">
                         <Grid Background="Transparent">
-                            <Border Background="#22000000" CornerRadius="4" Margin="2,4"/>
+                            <Border Background="#18050508" CornerRadius="4" Margin="2,4"/>
                             <Track x:Name="PART_Track" IsDirectionReversed="True">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0" Focusable="False"/>
@@ -387,7 +390,7 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Border Background="#66000000" CornerRadius="4" Margin="1,2"/>
+                                                <Border Background="#55818CF8" CornerRadius="4" Margin="1,2"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -402,13 +405,13 @@
 
     <!-- Startup: code sets Background transparent + SizeToContent so only the login card is visible -->
     <Border x:Name="RootChromeBorder"
-            CornerRadius="12"
+            CornerRadius="16"
             Background="Transparent"
-            BorderBrush="Transparent"
-            BorderThickness="0"
+            BorderBrush="#1AFFFFFF"
+            BorderThickness="1"
             Padding="0">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Opacity="0.16" Color="#0F172A"/>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="4" Direction="270" Opacity="0.38" Color="#050508"/>
         </Border.Effect>
 
         <Grid>
@@ -428,7 +431,7 @@
             </Grid.RowDefinitions>
 
             <!-- Top bar: left tools, centered title (fill), right controls -->
-            <DockPanel Grid.Row="0" Margin="0,0,0,12" LastChildFill="True">
+            <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="True">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="4,0,16,0">
                     <Button x:Name="HideButton" Content="Hide"
                             Style="{StaticResource HideToolbarButtonStyle}"
@@ -437,7 +440,7 @@
                         <Button.ToolTip>
                             <ToolTip>
                                 <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                           Text="Hides this window. A small chip appears at the top center of your screen—click it to bring Orio back (same as Hide on other screens)."/>
+                                           Text="Hides this window. A small chip appears at the top center of your screen—click it to bring Smeed AI back (same as Hide on other screens)."/>
                             </ToolTip>
                         </Button.ToolTip>
                     </Button>
@@ -464,9 +467,9 @@
                             FontSize="13"
                             Style="{StaticResource ToolbarIconCircleStyle}"
                             Margin="0,0,8,0"
-                            Background="#0EA5E9"
-                            Foreground="#FFFFFF"
-                            BorderBrush="#0284C7"
+                            Background="#4F46E5"
+                            Foreground="#EEF2FF"
+                            BorderBrush="#818CF8"
                             Click="SpeakerToggleButton_Click">
                         <Button.ToolTip>
                             <ToolTip>
@@ -477,7 +480,7 @@
                     </Button>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Auto answer"
-                                   Foreground="#E4E4E7"
+                                   Foreground="{StaticResource OrioMutedBrush}"
                                    FontSize="12"
                                    FontWeight="SemiBold"
                                    FontFamily="Segoe UI"
@@ -486,7 +489,7 @@
                             <TextBlock.ToolTip>
                                 <ToolTip>
                                     <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                               Text="When on, Orio listens for complete questions from speaker audio and from your mic (after a short pause), then streams a suggested answer automatically."/>
+                                               Text="When on, Smeed AI listens for complete questions from speaker audio and from your mic (after a short pause), then streams a suggested answer automatically."/>
                                 </ToolTip>
                             </TextBlock.ToolTip>
                         </TextBlock>
@@ -510,7 +513,7 @@
                     <Button.ToolTip>
                         <ToolTip>
                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                       Text="Closes Orio completely. End the interview session first if you want a clean shutdown."/>
+                                       Text="Closes Smeed AI completely. End the interview session first if you want a clean shutdown."/>
                         </ToolTip>
                     </Button.ToolTip>
                 </Button>
@@ -529,12 +532,12 @@
                     </Button.ToolTip>
                 </Button>
                 <Border DockPanel.Dock="Right"
-                        Background="#CC18181B"
-                        CornerRadius="9"
-                        BorderBrush="#F59E0B"
+                        Background="#B012121C"
+                        CornerRadius="8"
+                        BorderBrush="#D97706"
                         BorderThickness="1"
-                        Padding="10,0"
-                        Height="30"
+                        Padding="8,0"
+                        Height="28"
                         VerticalAlignment="Center"
                         Margin="0,0,8,0"
                         ToolTipService.ShowDuration="60000">
@@ -548,12 +551,12 @@
                                Text="00:00"
                                Foreground="#FEF3C7"
                                FontWeight="SemiBold"
-                               FontSize="12.5"
+                               FontSize="12"
                                FontFamily="Segoe UI"
                                VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
-                    <TextBlock Text="Opacity" Foreground="#CBD5E1" FontSize="11.5" FontWeight="SemiBold"
+                    <TextBlock Text="Opacity" Foreground="{StaticResource OrioMutedBrush}" FontSize="11" FontWeight="SemiBold"
                                VerticalAlignment="Center" Margin="0,0,8,0">
                         <TextBlock.ToolTip>
                             <ToolTip>
@@ -580,32 +583,30 @@
                         </Slider.ToolTip>
                     </Slider>
                 </StackPanel>
-                <TextBlock Text="Orio AI"
-                           Foreground="#F8FAFC" FontWeight="SemiBold" FontSize="15" FontFamily="Segoe UI"
+                <TextBlock Text="Smeed AI"
+                           Foreground="{StaticResource OrioTextBrush}" FontWeight="SemiBold" FontSize="14" FontFamily="Segoe UI"
                            VerticalAlignment="Center" HorizontalAlignment="Center"
                            TextAlignment="Center"/>
             </DockPanel>
 
-            <!-- Transcript area (same height as question) -->
-            <Grid Grid.Row="1" Margin="0,0,0,10">
+            <!-- Transcript row: full-width transcript + clear at end -->
+            <Grid Grid.Row="1" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Background="#9918181B" CornerRadius="10" BorderBrush="#6366F1" BorderThickness="1"
-                        Margin="0,0,8,0" Height="40">
+                <Border Background="#9812121C" CornerRadius="10" BorderBrush="#55818CF8" BorderThickness="1"
+                        Margin="0,0,8,0" Height="36">
                     <TextBox x:Name="TranscriptTextBlock"
                              Background="Transparent" BorderThickness="0"
-                             Foreground="#F8FAFC" TextWrapping="Wrap" FontSize="13"
+                             Foreground="{StaticResource OrioTextBrush}" TextWrapping="Wrap" FontSize="12.5"
                              FontFamily="Segoe UI" FontWeight="SemiBold"
-                             VerticalContentAlignment="Top" Padding="10,7"
+                             VerticalContentAlignment="Top" Padding="9,6"
                              IsReadOnly="True" Text=""/>
                 </Border>
 
-                <Button x:Name="TranscriptClearButton" Grid.Column="1" Content="Clear" Margin="0,0,6,0"
+                <Button x:Name="TranscriptClearButton" Grid.Column="1" Content="Clear"
                         Click="TranscriptClearButton_Click" Style="{StaticResource CompactClearButtonStyle}">
                     <Button.ToolTip>
                         <ToolTip>
@@ -614,18 +615,20 @@
                         </ToolTip>
                     </Button.ToolTip>
                 </Button>
-                <Button x:Name="ScreenshotAiButton" Grid.Column="2" Content="Analyze screen"
-                        Click="ScreenshotAiButton_Click" Style="{StaticResource CompactAskButtonStyle}"
-                        Margin="0,0,6,0" MinWidth="118">
-                    <Button.ToolTip>
-                        <ToolTip>
-                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                       Text="Captures all monitors (Orio is hidden from the shot), reads text with Azure Computer Vision, then answers any interview or coding question found—using your resume and session context."/>
-                        </ToolTip>
-                    </Button.ToolTip>
-                </Button>
-                <Button x:Name="AiAnswerButton" Grid.Column="3" Content="AI Answer"
-                        Click="AiAnswerButton_Click" Style="{StaticResource CompactPrimaryButtonStyle}">
+            </Grid>
+
+            <!-- Actions row: AI Answer, Analyze Screen, Text Input (with clear icon), Ask -->
+            <Grid Grid.Row="2" Margin="0,0,0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="AiAnswerButton" Grid.Column="0" Content="AI Answer"
+                        Click="AiAnswerButton_Click" Style="{StaticResource CompactPrimaryButtonStyle}"
+                        Margin="0,0,6,0">
                     <Button.ToolTip>
                         <ToolTip>
                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
@@ -633,50 +636,122 @@
                         </ToolTip>
                     </Button.ToolTip>
                 </Button>
-            </Grid>
 
-            <!-- Question input (same height as transcript) -->
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Background="#9918181B" CornerRadius="10" BorderBrush="#14B8A6" BorderThickness="1"
-                        Margin="0,0,8,0" Height="40">
-                    <TextBox x:Name="QuestionTextBox"
-                             Background="Transparent" BorderThickness="0"
-                             Foreground="#F8FAFC" TextWrapping="Wrap" FontSize="13"
-                             FontFamily="Segoe UI" FontWeight="SemiBold"
-                             VerticalContentAlignment="Center" Padding="10,7"
-                             Text=""/>
-                </Border>
-
-                <Button x:Name="QuestionClearButton" Grid.Column="1" Content="Clear" Margin="0,0,6,0"
-                        Click="QuestionClearButton_Click" Style="{StaticResource CompactClearButtonStyle}">
+                <Button x:Name="ScreenshotAiButton" Grid.Column="1" Content="Analyze screen"
+                        Click="ScreenshotAiButton_Click" Style="{StaticResource CompactAskButtonStyle}"
+                        Margin="0,0,8,0" MinWidth="108">
                     <Button.ToolTip>
                         <ToolTip>
                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                       Text="Clears the question box so you can type or paste a different prompt."/>
+                                       Text="Captures all monitors (Smeed AI is hidden from the shot), reads text with OCR, then answers any interview or coding question found—using your resume and session context."/>
                         </ToolTip>
                     </Button.ToolTip>
                 </Button>
-                <Button x:Name="AskButton" Grid.Column="2" Content="Ask"
+
+                <Border Grid.Column="2" Background="#9812121C" CornerRadius="10" BorderBrush="#400D9488" BorderThickness="1"
+                        Margin="0,0,8,0" Height="36">
+                    <Grid>
+                        <TextBox x:Name="QuestionTextBox"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{StaticResource OrioTextBrush}" TextWrapping="NoWrap" FontSize="12.5"
+                                 FontFamily="Segoe UI" FontWeight="SemiBold"
+                                 VerticalContentAlignment="Center" Padding="9,6"
+                                 Text=""/>
+                        <TextBlock x:Name="QuestionPlaceholderText"
+                                   Text="Type a question, paste a prompt, or ask something you want to practice…"
+                                   Foreground="{StaticResource OrioMutedBrush}"
+                                   FontFamily="Segoe UI"
+                                   FontSize="12.5"
+                                   Margin="12,0,34,0"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Text, ElementName=QuestionTextBox}" Value=""/>
+                                                <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=QuestionTextBox}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <Button x:Name="QuestionInlineClearButton"
+                                Content="✕"
+                                Width="26"
+                                Height="26"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="#CBD5E1"
+                                Background="#2A2A38"
+                                BorderBrush="#3F3F50"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0,0,6,0"
+                                Padding="0"
+                                Click="QuestionClearButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="bd"
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="bd" Property="Background" Value="#3F3F50"/>
+                                                        <Setter TargetName="bd" Property="BorderBrush" Value="#6366F1"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="bd" Property="Background" Value="#1E1E2A"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <!-- Hide the clear icon unless the user typed something -->
+                                        <DataTrigger Binding="{Binding Text, ElementName=QuestionTextBox}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Button x:Name="AskButton" Grid.Column="3" Content="Ask"
                         Click="AskButton_Click" Style="{StaticResource CompactAskButtonStyle}">
                     <Button.ToolTip>
                         <ToolTip>
                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                       Text="Sends the text in the question field to the AI (similar to AI Answer but driven by what you typed)."/>
+                                       Text="Sends the text in the question field to the AI (driven by what you typed)."/>
                         </ToolTip>
                     </Button.ToolTip>
                 </Button>
             </Grid>
 
             <!-- Status/debug line (always visible) -->
-            <Border Grid.Row="3" Background="#9918181B" CornerRadius="10" BorderBrush="#52525B" BorderThickness="1" Padding="10,8" Margin="0,4,0,0">
+            <Border Grid.Row="3" Background="#9812121C" CornerRadius="10" BorderBrush="#28FFFFFF" BorderThickness="1" Padding="9,7" Margin="0,4,0,0">
                 <TextBlock x:Name="StatusTextBlock"
-                           Foreground="#D4D4D8" FontSize="11.5" FontFamily="Segoe UI"
+                           Foreground="{StaticResource OrioMutedBrush}" FontSize="11" FontFamily="Segoe UI"
                            TextWrapping="Wrap" Text="Idle"/>
             </Border>
 
@@ -693,7 +768,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="AI Answer:" Foreground="#E0E7FF" FontWeight="SemiBold" FontSize="13"
+                    <TextBlock Text="AI Answer:" Foreground="#C7D2FE" FontWeight="SemiBold" FontSize="12.5"
                                FontFamily="Segoe UI" VerticalAlignment="Center"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,10,0">
                         <Button x:Name="AnswerHistoryPrevButton"
@@ -710,7 +785,7 @@
                             </Button.ToolTip>
                         </Button>
                         <TextBlock x:Name="AnswerHistoryPositionText"
-                                   Foreground="#C7D2FE" FontSize="11.5" FontWeight="SemiBold"
+                                   Foreground="#A5B4FC" FontSize="11.5" FontWeight="SemiBold"
                                    VerticalAlignment="Center" MinWidth="36" TextAlignment="Center"
                                    Visibility="Collapsed" Margin="0,0,6,0"/>
                         <Button x:Name="AnswerHistoryNextButton"
@@ -727,7 +802,7 @@
                         </Button>
                     </StackPanel>
                     <Button x:Name="CloseAnswerButton" Grid.Column="2" Content="✕"
-                            Width="30" Height="30" Padding="0" FontSize="14"
+                            Width="28" Height="28" Padding="0" FontSize="13"
                             Foreground="#FCA5A5"
                             Background="#3F1D1D"
                             BorderBrush="#991B1B"
@@ -747,7 +822,7 @@
                                 <Border x:Name="cb" Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="9">
+                                        CornerRadius="8">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -763,20 +838,20 @@
                         </Button.Template>
                     </Button>
                 </Grid>
-                <Border x:Name="AiAnswerBodyBorder" Grid.Row="1" Background="#9918181B" CornerRadius="12" BorderBrush="#6366F1" BorderThickness="1"
-                        MinHeight="80" Padding="10">
+                <Border x:Name="AiAnswerBodyBorder" Grid.Row="1" Background="#9812121C" CornerRadius="12" BorderBrush="#55818CF8" BorderThickness="1"
+                        MinHeight="72" Padding="9">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="1" Direction="270" Opacity="0.08" Color="#0F172A"/>
+                        <DropShadowEffect BlurRadius="20" ShadowDepth="2" Direction="270" Opacity="0.22" Color="#050508"/>
                     </Border.Effect>
                     <RichTextBox x:Name="AiAnswerTextBlock"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 Foreground="#F8FAFC"
+                                 Foreground="{StaticResource OrioTextBrush}"
                                  IsReadOnly="True"
                                  IsDocumentEnabled="False"
                                  VerticalScrollBarVisibility="Auto"
                                  HorizontalScrollBarVisibility="Disabled"
-                                 FontSize="13"
+                                 FontSize="12.5"
                                  FontFamily="Segoe UI"
                                  FontWeight="SemiBold"
                                  ScrollViewer.CanContentScroll="False"

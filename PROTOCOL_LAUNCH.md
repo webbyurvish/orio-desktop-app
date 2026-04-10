@@ -28,7 +28,7 @@ If the exe is elsewhere, edit the script and set `EXE_PATH` to the full path of 
 1. Win+R → `regedit` → Enter.
 2. Under `HKEY_CURRENT_USER\Software\Classes`, create:
    - Key: `orioai`
-     - Default value: `URL:Orio AI Session`
+     - Default value: `URL:Smeed AI Session`
      - String value: `URL Protocol` = (empty)
    - Key: `orioai\shell\open\command`
      - Default value: `"C:\Path\To\AiInterviewAssistant.exe" "%1"`

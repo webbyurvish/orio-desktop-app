@@ -22,6 +22,14 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Share the same logo asset as the web app (copied next to the exe). -->
+    <Content Include="..\orio-web-app\public\assets\smeed-logo.png">
+      <Link>assets\smeed-logo.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- Ensure login view XAML is always compiled into the app (avoids stale UI if glob/exclude is wrong). -->
   <ItemGroup>
     <Page Update="AppHeaderView.xaml">
