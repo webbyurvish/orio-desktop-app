@@ -26,9 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Share the same logo asset as the web app (copied next to the exe). -->
-    <Content Include="..\orio-web-app\public\assets\smeed-logo.png">
-      <Link>assets\smeed-logo.png</Link>
+    <!-- Logo lives in-repo so CI (desktop-only checkout) can publish without orio-web-app. -->
+    <Content Include="assets\smeed-logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
