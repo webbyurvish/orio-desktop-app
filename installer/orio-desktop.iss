@@ -1,3 +1,15 @@
+; Code signing (SmartScreen / "Windows protected your PC"):
+; Unsigned installers almost always show Microsoft Defender SmartScreen until you sign with a
+; trusted Authenticode certificate from a public CA (e.g. DigiCert, Sectigo, SSL.com).
+; 1) Publish: dotnet publish -c Release -r win-x64 --self-contained false (or your pipeline output).
+; 2) Sign AiInterviewAssistant.exe with signtool BEFORE compiling this script (see DEPLOYMENT_RUNBOOK).
+; 3) Install Windows SDK for signtool.exe; obtain a .pfx (Standard or EV code signing cert).
+; 4) Inno Setup: Tools → Configure Sign Tools → add a tool named e.g. "orio" with a command like:
+;      "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /f "C:\path\cert.pfx" /p "PFX_PASSWORD" $f
+; 5) Uncomment the next two lines after configuring the sign tool name to match:
+;SignTool=orio
+;SignedUninstaller=yes
+
 [Setup]
 AppId={{9D2D3D5F-5B39-4B75-9C15-4B09B54F8E91}
 AppName=Smeed AI Desktop

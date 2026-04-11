@@ -11,9 +11,11 @@
     <SolidColorBrush x:Key="OrioBorderSubtleBrush" Color="#14FFFFFF"/>
     <SolidColorBrush x:Key="OrioBorderMediumBrush" Color="#22FFFFFF"/>
 
+    <!-- Login / shell card: soft vertical lift (less flat black) -->
     <LinearGradientBrush x:Key="OrioShellCardFaceBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0C0C12" Offset="0"/>
-        <GradientStop Color="#08080E" Offset="1"/>
+        <GradientStop Color="#14141E" Offset="0"/>
+        <GradientStop Color="#0E0E16" Offset="0.45"/>
+        <GradientStop Color="#09090F" Offset="1"/>
     </LinearGradientBrush>
 
     <DropShadowEffect x:Key="OrioCardDropShadow"
@@ -34,9 +36,17 @@
     </Style>
 
     <Style x:Key="OrioShellBodyBorder" TargetType="Border">
-        <Setter Property="Background" Value="#08080E"/>
         <Setter Property="CornerRadius" Value="0,0,16,16"/>
         <Setter Property="Padding" Value="12,10,12,12"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#12121C" Offset="0"/>
+                    <GradientStop Color="#0C0C12" Offset="0.55"/>
+                    <GradientStop Color="#08080E" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="OrioPopupShell" TargetType="Border">
@@ -528,6 +538,7 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Login / shell header close (Material icon on Border). -->
     <Style x:Key="OrioHdrCloseBtn" TargetType="Border">
         <Setter Property="Width" Value="30"/>
         <Setter Property="Height" Value="30"/>
@@ -542,6 +553,47 @@
                 <Setter Property="Background" Value="#5CF43F5E"/>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- Same red treatment as OrioHdrCloseBtn for ✕ Buttons (e.g. interview toolbar, answer panel). -->
+    <Style x:Key="OrioAppCloseButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="MinWidth" Value="30"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="#FCE7F3"/>
+        <Setter Property="Content" Value="✕"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            CornerRadius="9"
+                            SnapsToDevicePixels="True"
+                            Background="#40E11D48">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#5CF43F5E"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#66F43F5E"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

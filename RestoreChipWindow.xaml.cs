@@ -23,10 +23,4 @@ public partial class RestoreChipWindow : Window
         RestoreRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private void ChipLogoImage_ImageFailed(object sender, ExceptionRoutedEventArgs e)
-    {
-        // If the logo isn't available at site-of-origin, keep the built-in gradient chip.
-        ChipLogoHost.Visibility = Visibility.Collapsed;
-        ChipFallback.Visibility = Visibility.Visible;
-    }
 }

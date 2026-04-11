@@ -104,10 +104,4 @@ public partial class AppHeaderView : UserControl
         HeaderDragRequested?.Invoke(this, e);
     }
 
-    private void LogoImage_ImageFailed(object sender, ExceptionRoutedEventArgs e)
-    {
-        // If the logo isn't available at site-of-origin, keep the built-in gradient mark.
-        LogoImage.Visibility = Visibility.Collapsed;
-        LogoFallback.Visibility = Visibility.Visible;
-    }
 }

@@ -14,43 +14,19 @@
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Grid Width="52" Height="52">
-        <!-- Fallback gradient chip (shown if image isn't found). -->
-        <Ellipse x:Name="ChipFallback"
-                 Width="44"
-                 Height="44"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center"
-                 Stroke="#99F0ABFC"
-                 StrokeThickness="1.5">
-            <Ellipse.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#2DD4BF" Offset="0"/>
-                    <GradientStop Color="#6366F1" Offset="0.55"/>
-                    <GradientStop Color="#A855F7" Offset="1"/>
-                </LinearGradientBrush>
-            </Ellipse.Fill>
-            <Ellipse.Effect>
-                <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.22" Color="#0F172A"/>
-            </Ellipse.Effect>
-        </Ellipse>
-
-        <!-- smeed-logo.png (place at: <exe>\assets\smeed-logo.png). -->
-        <Border x:Name="ChipLogoHost"
-                Width="44"
-                Height="44"
+        <!-- Opaque fill so PNG alpha does not show the desktop through the chip -->
+        <Border Width="48"
+                Height="48"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                CornerRadius="22"
+                CornerRadius="24"
                 Background="#0C0C12"
-                BorderBrush="#99F0ABFC"
-                BorderThickness="1.5"
-                SnapsToDevicePixels="True">
-            <Image x:Name="ChipLogoImage"
-                   Source="pack://siteoforigin:,,,/assets/smeed-logo.png"
-                   Stretch="Uniform"
-                   Margin="4"
-                   RenderOptions.BitmapScalingMode="HighQuality"
-                   ImageFailed="ChipLogoImage_ImageFailed"/>
+                ClipToBounds="True"
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True">
+            <Image Source="pack://siteoforigin:,,,/assets/smeed-logo.png"
+                   Stretch="UniformToFill"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
         </Border>
     </Grid>
 </Window>

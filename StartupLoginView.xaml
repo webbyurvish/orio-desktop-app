@@ -74,6 +74,8 @@
                                 CornerRadius="10"
                                 Cursor="Hand"
                                 Padding="12,0"
+                                BorderBrush="#404050"
+                                BorderThickness="1"
                                 MouseLeftButtonDown="LoginBorder_MouseLeftButtonDown"
                                 ToolTipService.ShowDuration="60000">
                             <Border.ToolTip>
@@ -84,14 +86,14 @@
                             </Border.ToolTip>
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
-                                    <GradientStop Color="#0D9488" Offset="0"/>
-                                    <GradientStop Color="#6366F1" Offset="0.5"/>
-                                    <GradientStop Color="#7C3AED" Offset="1"/>
+                                    <GradientStop Color="#3A3A48" Offset="0"/>
+                                    <GradientStop Color="#2C2C38" Offset="0.5"/>
+                                    <GradientStop Color="#24242E" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
                             <TextBlock x:Name="LoginButtonText"
                                        Text="Login"
-                                       Foreground="White"
+                                       Foreground="#F1F5F9"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        HorizontalAlignment="Center"

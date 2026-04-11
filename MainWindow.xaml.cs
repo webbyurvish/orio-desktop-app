@@ -36,9 +36,37 @@ public partial class MainWindow : Window
 
     private static readonly HashSet<string> CodeKeywords = new(StringComparer.OrdinalIgnoreCase)
     {
-        "select","from","where","join","left","right","inner","outer","group","by","order","limit","insert","into","values","update","set","delete","create","table",
-        "if","else","for","foreach","while","return","class","public","private","protected","static","void","string","int","bool","var","new","using","async","await","try","catch","finally","switch","case","break","continue","true","false","null"
+        // SQL
+        "select", "from", "where", "join", "left", "right", "inner", "outer", "cross", "full", "on", "as", "and", "or", "not",
+        "group", "by", "order", "limit", "offset", "having", "union", "all", "distinct", "insert", "into", "values", "update",
+        "set", "delete", "create", "table", "alter", "drop", "truncate", "index", "view", "primary", "key", "foreign",
+        "references", "constraint", "default", "check", "unique", "cascade", "between", "in", "like", "ilike", "exists",
+        "case", "when", "then", "else", "end", "with", "recursive", "over", "partition", "window", "asc", "desc", "nulls",
+        "first", "last", "count", "sum", "avg", "min", "max", "cast", "coalesce", "nullif", "is", "null", "true", "false",
+        // C# / general
+        "if", "else", "for", "foreach", "while", "return", "class", "public", "private", "protected", "internal", "static",
+        "void", "string", "int", "bool", "var", "new", "using", "async", "await", "try", "catch", "finally", "switch",
+        "case", "break", "continue", "namespace", "interface", "enum", "struct", "readonly", "const", "delegate", "event",
+        "typeof", "nameof", "lock", "yield", "throw", "this", "base", "sizeof", "stackalloc", "record", "init",
+        "get", "set", "add", "remove", "operator", "implicit", "explicit", "params", "ref", "out", "in", "let", "into",
+        "orderby", "ascending", "descending", "equals"
     };
+
+    private static SolidColorBrush FreezeBrush(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        if (brush.CanFreeze)
+            brush.Freeze();
+        return brush;
+    }
+
+    private static readonly SolidColorBrush CodeHostBackgroundBrush = FreezeBrush(0x26, 0x28, 0x34);
+    private static readonly SolidColorBrush CodeHostBorderBrush = FreezeBrush(0x58, 0x5C, 0x70);
+    private static readonly SolidColorBrush CodeFgDefaultBrush = FreezeBrush(0xEE, 0xF0, 0xF4);
+    private static readonly SolidColorBrush CodeFgKeywordBrush = FreezeBrush(0x93, 0xC5, 0xFD);
+    private static readonly SolidColorBrush CodeFgStringBrush = FreezeBrush(0xFC, 0xD3, 0x4D);
+    private static readonly SolidColorBrush CodeFgNumberBrush = FreezeBrush(0xF0, 0xD9, 0x90);
+    private static readonly SolidColorBrush CodeFgCommentBrush = FreezeBrush(0xA3, 0xD9, 0xA5);
 
     private static readonly Regex InterviewerQuestionLeadInRegex = new(
         @"^(what|why|how|when|where|who|whom|which|whose)\b|" +
@@ -53,8 +81,9 @@ public partial class MainWindow : Window
         "Always answer in FIRST PERSON as that candidate (for example: 'My name is ...', 'I have 5 years of experience ...'). " +
         "Never say you are an AI or language model. " +
         "The user will give you text that was transcribed from speech. " +
-        "Answer the question fully and in detail, using the resume details whenever relevant. " +
-        "For questions like 'what is your name' or 'introduce yourself', answer using the candidate's real name and background from the resume.";
+        "Answer the question fully, using resume details whenever relevant. " +
+        "For questions like 'what is your name' or 'introduce yourself', answer using the candidate's real name and background from the resume. " +
+        "Write so each line or bullet is easy to read quickly and sounds natural when spoken aloud.";
 
     private static string MapSessionLanguageToAzureSpeechLocale(string? sessionLanguage)
     {
@@ -564,6 +593,7 @@ public partial class MainWindow : Window
         MainContentGrid.Visibility = Visibility.Collapsed;
         // No fill behind the login card — avoids light “halo” around the rounded box; show-through = real transparency
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         // Hug the card so the window isn’t wider/taller than the rounded content
@@ -687,6 +717,7 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Collapsed;
         MainContentGrid.Visibility = Visibility.Collapsed;
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         Width = double.NaN;
@@ -705,6 +736,7 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Collapsed;
         MainContentGrid.Visibility = Visibility.Collapsed;
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         Width = double.NaN;
@@ -856,6 +888,7 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Collapsed;
         MainContentGrid.Visibility = Visibility.Collapsed;
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         Width = double.NaN;
@@ -875,6 +908,7 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Collapsed;
         MainContentGrid.Visibility = Visibility.Collapsed;
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         Width = double.NaN;
@@ -968,6 +1002,7 @@ public partial class MainWindow : Window
         ActivateSessionView.Visibility = Visibility.Visible;
         MainContentGrid.Visibility = Visibility.Collapsed;
         RootChromeBorder.Background = Brushes.Transparent;
+        RootChromeBorder.Opacity = 1.0;
         RootChromeBorder.Padding = new Thickness(0);
         RootChromeBorder.CornerRadius = new CornerRadius(0);
         Width = double.NaN;
@@ -1042,34 +1077,32 @@ public partial class MainWindow : Window
         RootChromeBorder.Padding = new Thickness(12);
         RootChromeBorder.CornerRadius = new CornerRadius(16);
         RootChromeBorder.BorderThickness = new Thickness(1);
+        // Window stays fully opaque; interview panel fade is RootChromeBorder.Opacity (see ApplyChromeTranslucencyFromSlider).
         Opacity = 1.0;
         ApplyChromeTranslucencyFromSlider();
         TrySetDwmBorderColor(0x00ECE7E5);
     }
 
     /// <summary>
-    /// Translucency is applied only to chrome backgrounds (alpha on brushes). Window.Opacity is kept at 1 so
-    /// answer text, code, and syntax colors stay fully readable.
+    /// Maps the opacity slider (55–100%) to <see cref="Border.Opacity"/> on <see cref="RootChromeBorder"/> so the
+    /// panel fill, border, buttons, text, and nested controls all fade uniformly. Brushes use full alpha; element
+    /// opacity handles translucency (no separate “background only” path).
     /// </summary>
     private void ApplyChromeTranslucencyFromSlider()
     {
         if (!_mainUiStarted || RootChromeBorder == null) return;
 
         var pct = WindowOpacitySlider?.Value ?? 90;
-        var t = Math.Clamp((pct - 55.0) / 45.0, 0, 1);
-        // More transparent panel at low slider, stronger dim at high end (55% .. 100%).
-        byte bgA = (byte)Math.Round(40 + t * (210 - 40));
-        byte borderA = (byte)Math.Round(36 + t * (160 - 36));
+        RootChromeBorder.Opacity = Math.Clamp(pct / 100.0, 0, 1);
 
-        // Aurora void + cool edge (matches SharedDesktopChrome aurora stealth)
-        RootChromeBorder.Background = new SolidColorBrush(Color.FromArgb(bgA, 0x05, 0x05, 0x08));
-        RootChromeBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(borderA, 0xC7, 0xD2, 0xFE));
+        // Opaque RGB — translucency comes only from RootChromeBorder.Opacity (matches SharedDesktopChrome surface tone).
+        RootChromeBorder.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x0C, 0x12));
+        RootChromeBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x52, 0x52, 0x5E));
     }
 
     private void WindowOpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (!_mainUiStarted) return;
-        Opacity = 1.0;
         ApplyChromeTranslucencyFromSlider();
     }
 
@@ -1929,9 +1962,9 @@ public partial class MainWindow : Window
                 MicToggleButton.Content = "\uE720";
                 MicToggleButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
                 MicToggleButton.ToolTip = "Microphone on";
-                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x0D, 0x94, 0x88));
-                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xFD, 0xFA));
-                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x14, 0xB8, 0xA6));
+                MicToggleButton.Background = new SolidColorBrush(Color.FromRgb(0x4F, 0x46, 0xE5));
+                MicToggleButton.Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xF2, 0xFF));
+                MicToggleButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x81, 0x8C, 0xF8));
                 StatusTextBlock.Text = "Mic on.";
             }
             else
@@ -2426,12 +2459,27 @@ public partial class MainWindow : Window
                "Never mention that you are an AI, assistant, or language model. " +
                "Use the resume details (name, experience, skills, education) to answer questions such as 'What is your name?' or 'Introduce yourself' as the candidate." +
                $"\n\nLANGUAGE: Respond in {outputLanguage}. If you include code, keep code keywords/identifiers in their original language (usually English), but explain in {outputLanguage}." +
-               "\n\nRESPONSE FORMAT RULES (VERY IMPORTANT):" +
-               "\n1) Always answer in clear numbered points (1., 2., 3.) suitable for interview speaking." +
-               "\n2) Keep language interview-friendly, concise, and confident." +
-               "\n3) If code/query is needed, put it in fenced code blocks using triple backticks and language tag (```sql, ```csharp, ```javascript, etc.)." +
-               "\n4) In code/query blocks, add short inline comments to explain key lines so the user can explain each line to the interviewer." +
-               "\n5) For non-code answers, still keep point-by-point structure and include a short 'How to say this in interview' line at the end.";
+               "\n\nRESPONSE FORMAT AND STYLE (VERY IMPORTANT — follow every time):" +
+               "\n" +
+               "\n1) NUMBERED POINTS — Use numbered main points (1., 2., 3.). Each point should be one clear idea the candidate can say in roughly one or two sentences. " +
+               "Keep bullets parallel and scannable so the user can read from the top and immediately use the answer." +
+               "\n" +
+               "\n2) LEAD WITH THE ANSWER — Point 1 should directly address the question (headline answer). Do not bury the main message after long setup." +
+               "\n" +
+               "\n3) INTERVIEW-FRIENDLY TONE — Confident, concise, conversational first person. Avoid stiff meta-phrases ('In summary', 'As an AI', 'This response will'). " +
+               "Avoid repeating the same template line in every answer." +
+               "\n" +
+               "\n4) DEPTH WHEN NEEDED — For behavioral or 'tell me about a time' questions, use sub-bullets or short paragraphs under each main point (Situation → Action → Result style is fine) without labeling STAR unless it helps clarity. " +
+               "For simple factual questions (name, years of experience, yes/no with brief reason), keep the reply short; extra points are unnecessary." +
+               "\n" +
+               "\n5) CODE / QUERIES — When code or SQL is needed, use fenced code blocks with a language tag (```sql, ```csharp, ```javascript, etc.). " +
+               "Add brief inline comments on non-obvious lines so the candidate can explain the code aloud to the interviewer." +
+               "\n" +
+               "\n6) NO REPETITIVE SECTION HEADERS — Do NOT add a standing section title or label on every answer (for example, do NOT routinely write 'How to say this in the interview:' or similar). " +
+               "The numbered points themselves should already be phrased in natural spoken English (or the target language) so the user can read them aloud as-is." +
+               "\n" +
+               "\n7) OPTIONAL ONE-LINE WRAP-UP — Only for long, nuanced, or behavioral answers, you may add a single short closing sentence (no heading) that ties the points together. " +
+               "Omit this for short answers. Never use the same closing sentence twice in a row across different topics.";
     }
 
     private async Task GetAnswerAsync(string userContent, string? systemPrompt = null, string? displayQuestionForUi = null)
@@ -2790,18 +2838,42 @@ public partial class MainWindow : Window
 
     private static void AddCodeBlock(FlowDocument doc, string codeText)
     {
+        const double codeFontSize = 14.0;
+        const double codeLineHeight = 21.0;
+        const double padH = 14.0;
+        const double padV = 12.0;
+
+        var mono = new FontFamily("Consolas, Cascadia Mono, Cascadia Code, Courier New");
+
         var codeDoc = new FlowDocument
         {
-            PagePadding = new Thickness(8, 6, 8, 6),
-            Background = Brushes.Transparent
+            PagePadding = new Thickness(padH, padV, padH, padV),
+            Background = Brushes.Transparent,
+            FontFamily = mono,
+            FontSize = codeFontSize,
+            TextAlignment = TextAlignment.Left,
+            LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            LineHeight = codeLineHeight
         };
 
-        var codeParagraph = new Paragraph { Margin = new Thickness(0) };
-        foreach (var line in codeText.Replace("\r\n", "\n").Split('\n'))
+        var codeParagraph = new Paragraph
         {
-            AppendHighlightedCodeLine(codeParagraph, line);
-            codeParagraph.Inlines.Add(new LineBreak());
+            Margin = new Thickness(0),
+            LineHeight = codeLineHeight,
+            LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            FontFamily = mono,
+            FontSize = codeFontSize,
+            Foreground = CodeFgDefaultBrush
+        };
+
+        var lines = codeText.Replace("\r\n", "\n").Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+        {
+            AppendHighlightedCodeLine(codeParagraph, lines[i]);
+            if (i < lines.Length - 1)
+                codeParagraph.Inlines.Add(new LineBreak());
         }
+
         codeDoc.Blocks.Add(codeParagraph);
 
         var codeView = new RichTextBox
@@ -2812,23 +2884,39 @@ public partial class MainWindow : Window
             Background = Brushes.Transparent,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC)),
-            Document = codeDoc
+            FontFamily = mono,
+            FontSize = codeFontSize,
+            FontWeight = FontWeights.Normal,
+            Foreground = CodeFgDefaultBrush,
+            Document = codeDoc,
+            CaretBrush = Brushes.Transparent,
+            Opacity = 1.0
         };
+
+        TextOptions.SetTextFormattingMode(codeView, TextFormattingMode.Display);
+        TextOptions.SetTextRenderingMode(codeView, TextRenderingMode.ClearType);
+        RenderOptions.SetClearTypeHint(codeView, ClearTypeHint.Enabled);
+        RenderOptions.SetCachingHint(codeView, CachingHint.Unspecified);
+
         ScrollViewer.SetCanContentScroll(codeView, false);
         ScrollViewer.SetPanningMode(codeView, PanningMode.None);
 
         var border = new Border
         {
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x15, 0x23, 0x42)),
-            Margin = new Thickness(0, 4, 0, 10),
+            BorderBrush = CodeHostBorderBrush,
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(6),
+            Background = CodeHostBackgroundBrush,
+            Margin = new Thickness(0, 6, 0, 12),
+            Padding = new Thickness(0),
+            SnapsToDevicePixels = true,
+            UseLayoutRounding = true,
+            Opacity = 1.0,
             Child = codeView
         };
+
+        RenderOptions.SetClearTypeHint(border, ClearTypeHint.Enabled);
+        RenderOptions.SetCachingHint(border, CachingHint.Unspecified);
 
         doc.Blocks.Add(new BlockUIContainer(border));
     }
@@ -2836,33 +2924,29 @@ public partial class MainWindow : Window
     private static void AppendHighlightedCodeLine(Paragraph paragraph, string line)
     {
         var commentIndex = line.IndexOf("//", StringComparison.Ordinal);
-        if (commentIndex < 0) commentIndex = line.IndexOf("--", StringComparison.Ordinal);
-        if (commentIndex < 0 && line.TrimStart().StartsWith("#", StringComparison.Ordinal)) commentIndex = 0;
+        if (commentIndex < 0)
+            commentIndex = line.IndexOf("--", StringComparison.Ordinal);
+        if (commentIndex < 0 && line.TrimStart().StartsWith("#", StringComparison.Ordinal))
+            commentIndex = 0;
 
         var codePart = commentIndex >= 0 ? line[..commentIndex] : line;
         var commentPart = commentIndex >= 0 ? line[commentIndex..] : string.Empty;
 
         foreach (var token in Regex.Split(codePart, @"(\W+)"))
         {
-            if (string.IsNullOrEmpty(token)) continue;
-            var run = new Run(token);
+            if (string.IsNullOrEmpty(token))
+                continue;
+
+            var run = new Run(token) { FontWeight = FontWeights.Normal };
             if (CodeKeywords.Contains(token))
-            {
-                run.Foreground = new SolidColorBrush(Color.FromRgb(0x7D, 0xDD, 0xFF));
-                run.FontWeight = FontWeights.SemiBold;
-            }
+                run.Foreground = CodeFgKeywordBrush;
             else if (Regex.IsMatch(token, "^\".*\"$|^'.*'$"))
-            {
-                run.Foreground = new SolidColorBrush(Color.FromRgb(0xFC, 0xA5, 0xA5));
-            }
+                run.Foreground = CodeFgStringBrush;
             else if (Regex.IsMatch(token, @"^\d+$"))
-            {
-                run.Foreground = new SolidColorBrush(Color.FromRgb(0xFD, 0xE0, 0x68));
-            }
+                run.Foreground = CodeFgNumberBrush;
             else
-            {
-                run.Foreground = new SolidColorBrush(Color.FromRgb(0xF1, 0xF5, 0xF9));
-            }
+                run.Foreground = CodeFgDefaultBrush;
+
             paragraph.Inlines.Add(run);
         }
 
@@ -2870,7 +2954,8 @@ public partial class MainWindow : Window
         {
             paragraph.Inlines.Add(new Run(commentPart)
             {
-                Foreground = new SolidColorBrush(Color.FromRgb(0x6E, 0xEE, 0xB3))
+                Foreground = CodeFgCommentBrush,
+                FontWeight = FontWeights.Normal
             });
         }
     }
