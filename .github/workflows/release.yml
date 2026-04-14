@@ -55,4 +55,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer/output/orio-desktop-setup.exe
+            installer/output/smeed-setup.exe

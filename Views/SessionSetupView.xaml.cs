@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -18,6 +19,7 @@ public partial class SessionSetupView : UserControl
     }
 
     public event RoutedEventHandler? FullSessionRequested;
+    public event RoutedEventHandler? BuyCreditsRequested;
     public event RoutedEventHandler? FreeSessionRequested;
     public event RoutedEventHandler? CloseRequested;
     public event RoutedEventHandler? MinimizeRequested;
@@ -34,15 +36,35 @@ public partial class SessionSetupView : UserControl
 
         MoreOptionsPopup.PlacementTarget = SharedHeader.MoreMenuAnchorElement;
         MoveOptionsPopup.PlacementTarget = SharedHeader.MoveMenuAnchorElement;
+
+        CreditsState.Current.PropertyChanged += CreditsState_OnPropertyChanged;
+        RefreshPaidSessionOptionFromCredits();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        CreditsState.Current.PropertyChanged -= CreditsState_OnPropertyChanged;
+
         if (_hostWindow != null)
         {
             _hostWindow.PreviewMouseLeftButtonDown -= OnWindowPreviewMouseLeftButtonDown;
             _hostWindow = null;
         }
+    }
+
+    private void CreditsState_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CreditsState.CreditsText))
+            RefreshPaidSessionOptionFromCredits();
+    }
+
+    private void RefreshPaidSessionOptionFromCredits()
+    {
+        var buy = CreditsState.Current.ShouldShowBuyCreditsInsteadOfFullSession();
+        PaidSessionOptionTitle.Text = buy ? "Buy credits" : "Full session";
+        PaidSessionOptionBorder.ToolTip = buy
+            ? "You need interview credits for a full session. Opens the website pricing section in your browser."
+            : "Creating a full session does not spend credits. When you activate the interview, 0.5 credit is used for the first block of time; the session can auto-extend near the end.";
     }
 
     private void OnWindowPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -140,9 +162,15 @@ public partial class SessionSetupView : UserControl
         e.Handled = true;
     }
 
-    private void FullSession_Click(object sender, MouseButtonEventArgs e)
+    private void PaidSessionOption_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (CreditsState.Current.ShouldShowBuyCreditsInsteadOfFullSession())
+        {
+            BuyCreditsRequested?.Invoke(this, new RoutedEventArgs());
+            return;
+        }
+
         FullSessionRequested?.Invoke(this, new RoutedEventArgs());
     }
 

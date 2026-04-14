@@ -123,9 +123,15 @@
                                 </Border.ToolTip>
                                 <TextBlock Text="Back" Foreground="#A5B4FC" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </Border>
-                            <Border Grid.Column="1" CornerRadius="9" Padding="9,8" Margin="6,0,0,0" Cursor="Hand" MouseLeftButtonDown="Activate_Click">
+                            <Border x:Name="PrimaryActionBorder"
+                                    Grid.Column="1"
+                                    CornerRadius="9"
+                                    Padding="9,8"
+                                    Margin="6,0,0,0"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="PrimaryAction_Click">
                                 <Border.ToolTip>
-                                    <ToolTip>
+                                    <ToolTip x:Name="PrimaryActionToolTip">
                                         <TextBlock Style="{StaticResource OrioTooltipBodyText}"
                                                    Text="Starts the paid interview timer. 0.5 credit covers the first block of time; the app can auto-extend near the end of the window."/>
                                     </ToolTip>
@@ -137,7 +143,7 @@
                                         <GradientStop Color="#7C3AED" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Border.Background>
-                                <TextBlock Text="Activate (0.5 credit)" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="PrimaryActionText" Text="Activate (0.5 credit)" Foreground="White" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </StackPanel>

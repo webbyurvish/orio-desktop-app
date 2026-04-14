@@ -2,14 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:AiInterviewAssistant"
-             StartupUri="MainWindow.xaml">
+             StartupUri="Windows/MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="SharedDesktopChrome.xaml"/>
+                <ResourceDictionary Source="Resources/SharedDesktopChrome.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Style TargetType="ToolTip" BasedOn="{StaticResource OrioTooltipStyle}"/>
+            <Style TargetType="ToolTip" BasedOn="{StaticResource OrioTooltipStyle}">
+                <EventSetter Event="Opened" Handler="ToolTip_OnOpened"/>
+            </Style>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 

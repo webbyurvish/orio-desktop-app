@@ -6,12 +6,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>1.0.11</Version>
-    <AssemblyVersion>1.0.11.0</AssemblyVersion>
-    <FileVersion>1.0.11.0</FileVersion>
+    <Version>1.0.14</Version>
+    <AssemblyVersion>1.0.14.0</AssemblyVersion>
+    <FileVersion>1.0.14.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
+    <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
     <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.12" />
     <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.2.1" />
@@ -26,36 +28,42 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Logo lives in-repo so CI (desktop-only checkout) can publish without orio-web-app. -->
+    <!-- Logo: copy next to exe and embed for pack://application fallback. -->
     <Content Include="assets\smeed-logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="assets\smeed-logo.png" />
+    <!-- Code block copy icon -->
+    <Content Include="assets\copy.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="assets\copy.png" />
   </ItemGroup>
 
   <!-- Ensure login view XAML is always compiled into the app (avoids stale UI if glob/exclude is wrong). -->
   <ItemGroup>
-    <Page Update="AppHeaderView.xaml">
+    <Page Update="Views\AppHeaderView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="StartupLoginView.xaml">
+    <Page Update="Views\StartupLoginView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="SessionSetupView.xaml">
+    <Page Update="Views\SessionSetupView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="PastSessionsView.xaml">
+    <Page Update="Views\PastSessionsView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="CreateSessionDetailsView.xaml">
+    <Page Update="Views\CreateSessionDetailsView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="CreateSessionStep2View.xaml">
+    <Page Update="Views\CreateSessionStep2View.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="ActivateSessionView.xaml">
+    <Page Update="Views\ActivateSessionView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="SharedDesktopChrome.xaml">
+    <Page Update="Resources\SharedDesktopChrome.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

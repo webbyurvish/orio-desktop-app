@@ -80,18 +80,13 @@
                                     </Border.ToolTip>
                                     <TextBlock Text="Free session" HorizontalAlignment="Center" Foreground="{StaticResource OrioTextBrush}" FontSize="13" FontWeight="SemiBold"/>
                                 </Border>
-                                <Border Grid.Column="1"
+                                <Border x:Name="PaidSessionOptionBorder"
+                                        Grid.Column="1"
                                         Margin="6,0,0,0"
                                         Style="{StaticResource OrioSessionTileFullStyle}"
-                                        MouseLeftButtonDown="FullSession_Click"
+                                        MouseLeftButtonDown="PaidSessionOption_Click"
                                         ToolTipService.ShowDuration="60000">
-                                    <Border.ToolTip>
-                                        <ToolTip>
-                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                       Text="Creating a full session does not spend credits. When you activate the interview, 0.5 credit is used for the first block of time; the session can auto-extend near the end."/>
-                                        </ToolTip>
-                                    </Border.ToolTip>
-                                    <TextBlock Text="Full session" HorizontalAlignment="Center" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="PaidSessionOptionTitle" Text="Full session" HorizontalAlignment="Center" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
                                 </Border>
                             </Grid>
                         </StackPanel>

@@ -1,0 +1,1104 @@
+<Window x:Class="AiInterviewAssistant.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AiInterviewAssistant"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        Title="Smeed AI"
+        Width="820" MinHeight="110" MinWidth="640"
+        SizeToContent="Height"
+        WindowStartupLocation="Manual"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        FocusVisualStyle="{x:Null}"
+        Loaded="Window_Loaded"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Shared chrome button chrome -->
+        <Style x:Key="RoundedButton" TargetType="Button">
+            <Setter Property="Background" Value="#2212121C"/>
+            <Setter Property="Foreground" Value="{StaticResource OrioTextBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#3352525E"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ClearButtonStyle" TargetType="Button" BasedOn="{StaticResource RoundedButton}">
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
+        </Style>
+        <!-- Compact row actions: smaller chrome, slightly larger readable type -->
+        <Style x:Key="CompactActionButtonBase" TargetType="Button">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="MaxHeight" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.93"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.86"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CompactClearButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactActionButtonBase}">
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
+            <Setter Property="MinWidth" Value="56"/>
+        </Style>
+        <Style x:Key="CompactPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactClearButtonStyle}">
+            <Setter Property="MinWidth" Value="76"/>
+        </Style>
+        <Style x:Key="CompactAskButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactClearButtonStyle}">
+            <Setter Property="MinWidth" Value="46"/>
+        </Style>
+        <!-- Coral send FAB — matches reference accent -->
+        <Style x:Key="CoralSendButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#FFFBF7F4"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Content" Value="&#xE725;"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="sendBd" CornerRadius="10" BorderThickness="0" SnapsToDevicePixels="True">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#EA8F6C" Offset="0"/>
+                                    <GradientStop Color="#D97757" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="sendBd" Property="Opacity" Value="0.94"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="sendBd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="sendBd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="FollowUpChipButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Background" Value="#252F38"/>
+            <Setter Property="BorderBrush" Value="#332DD4BF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="chipBd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="14" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="chipBd" Property="Background" Value="#283842"/>
+                                <Setter TargetName="chipBd" Property="BorderBrush" Value="#552DD4BF"/>
+                                <Setter TargetName="chipBd" Property="Opacity" Value="0.98"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="chipBd" Property="Background" Value="#1A2530"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="chipBd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ClearButtonStyle}"/>
+        <Style x:Key="AskButtonStyle" TargetType="Button" BasedOn="{StaticResource ClearButtonStyle}"/>
+        <!-- Stop session: clear destructive red, readable on dark toolbar -->
+        <Style x:Key="EndSessionToolbarStyle" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#FEE2E2"/>
+            <Setter Property="Background" Value="#9B1C1C"/>
+            <Setter Property="BorderBrush" Value="#F87171"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#DC2626"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#FCA5A5"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#7F1D1D"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#EF4444"/>
+                                <Setter Property="Foreground" Value="#FECACA"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HideToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactActionButtonBase}">
+            <Setter Property="MinWidth" Value="48"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="9,0"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
+        </Style>
+        <Style x:Key="ToolbarIconCircleStyle" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- iOS-style switch; use empty Content — label sits beside control in toolbar -->
+        <Style x:Key="AutoAnswerSwitchToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Content" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid Width="42" Height="22" SnapsToDevicePixels="True">
+                            <Border x:Name="Track" CornerRadius="11" Height="22"
+                                    Background="#2A2A38" BorderBrush="#3F3F50" BorderThickness="1"/>
+                            <Border x:Name="Thumb" Width="18" Height="18" CornerRadius="9"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Margin="3,0,0,0" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.25" Color="#000000"/>
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Track" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Track" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="#4F46E5"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="#818CF8"/>
+                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ChromeSliderStyle" TargetType="Slider">
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Foreground" Value="#818CF8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid SnapsToDevicePixels="True">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                            </Grid.RowDefinitions>
+                            <Border x:Name="TrackBackground" Grid.Row="1" Height="5" CornerRadius="3"
+                                    Background="#2A2A38" BorderThickness="0" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                            <Track x:Name="PART_Track" Grid.Row="1" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Height="0" Width="0" Opacity="0"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Height="0" Width="0" Opacity="0"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Width="16" Height="16" Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Fill="#A5B4FC" Stroke="#6366F1" StrokeThickness="1.5"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="AnswerNavButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Background" Value="#2A2A38"/>
+            <Setter Property="BorderBrush" Value="#45465A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="hb" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="False"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="hb" Property="Background" Value="#34343E"/>
+                                <Setter TargetName="hb" Property="BorderBrush" Value="#5C5C6A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="hb" Property="Background" Value="#22222A"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#64748B"/>
+                                <Setter TargetName="hb" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Thin scrollbars: theme MinWidth (~18) would ignore a narrow Width; margins must fit inside Width. -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid Background="Transparent">
+                            <Border Background="#18050508" CornerRadius="3" Margin="1,2"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border Background="#7094A3B8" CornerRadius="3" Margin="0,2"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <!-- Vertical scroll feels best reversed (thumb down = scroll down). Horizontal should be natural (thumb right = scroll right). -->
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <Setter Property="Width" Value="5"/>
+                    <Setter Property="MinWidth" Value="5"/>
+                </Trigger>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Height" Value="5"/>
+                    <Setter Property="MinHeight" Value="5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <!-- Startup: code sets Background transparent + SizeToContent so only the login card is visible -->
+    <Border x:Name="RootChromeBorder"
+            CornerRadius="0"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Padding="0">
+        <Border.Effect>
+            <!-- Remove the “back card” shadow; only the two inner cards should be visible. -->
+            <DropShadowEffect BlurRadius="0" ShadowDepth="0" Opacity="0" Color="Transparent"/>
+        </Border.Effect>
+
+        <Grid>
+            <local:StartupLoginView x:Name="StartupLoginView"/>
+            <local:SessionSetupView x:Name="SessionSetupView" Visibility="Collapsed"/>
+            <local:PastSessionsView x:Name="PastSessionsView" Visibility="Collapsed"/>
+            <local:CreateSessionDetailsView x:Name="CreateSessionDetailsView" Visibility="Collapsed"/>
+            <local:CreateSessionStep2View x:Name="CreateSessionStep2View" Visibility="Collapsed"/>
+            <local:ActivateSessionView x:Name="ActivateSessionView" Visibility="Collapsed"/>
+            <Grid x:Name="MainContentGrid" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="TranscriptLeftColumn" Width="0"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition x:Name="MainCardsColumn" Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition x:Name="TranscriptRightColumn" Width="0"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <!-- Top card: toolbar + transcript -->
+                <RowDefinition Height="Auto"/>
+                <!-- Bottom card: opacity row + answer + ask row -->
+                <RowDefinition x:Name="AnswerCardRow" Height="0"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top card: toolbar + transcript line (single detached rounded rectangle) -->
+            <Border x:Name="TopToolbarCardBorder"
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Background="#B012121C"
+                    CornerRadius="16"
+                    BorderBrush="#3352525E"
+                    BorderThickness="1"
+                    Padding="12,12,18,12"
+                    Margin="0,0,0,2"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True">
+                <StackPanel>
+                    <!-- Top bar: logo → title → primary actions → audio → hide → stop → timer → close (single row). -->
+                    <Grid x:Name="TopToolbarRowGrid" MinHeight="44" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ScrollViewer x:Name="TopToolbarScrollViewer"
+                                      Grid.Column="0"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalContentAlignment="Center"
+                                      Padding="0">
+                            <StackPanel x:Name="TopToolbarContent"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="4,0,6,0">
+                        <Border Width="40" Height="40"
+                                Margin="0,0,10,0"
+                                CornerRadius="20"
+                                Background="#15050508"
+                                BorderBrush="#28FFFFFF"
+                                BorderThickness="1"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True"
+                                VerticalAlignment="Center">
+                            <Image x:Name="ToolbarLogoImage"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Border>
+                        <TextBlock Text="Smeed AI"
+                                   Foreground="#F1F5F9" FontWeight="SemiBold" FontSize="14" FontFamily="Segoe UI"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,14,0"
+                                   TextOptions.TextFormattingMode="Display"/>
+
+                        <Button x:Name="AiAnswerButton" Content="AI Answer"
+                                Click="AiAnswerButton_Click" Style="{StaticResource CompactPrimaryButtonStyle}"
+                                Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <Button x:Name="ScreenshotAiButton" Content="Analyze screen"
+                                Click="ScreenshotAiButton_Click" Style="{StaticResource CompactAskButtonStyle}"
+                                Margin="0,0,12,0" MinWidth="108" VerticalAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="Auto answer"
+                                       Foreground="{StaticResource OrioMutedBrush}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       FontFamily="Segoe UI"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0">
+                                <TextBlock.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                   Text="When on, Smeed AI listens for complete questions from speaker audio and from your mic (after a short pause), then streams a suggested answer automatically."/>
+                                    </ToolTip>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
+                            <ToggleButton x:Name="AutoAnswerToggle"
+                                          Style="{StaticResource AutoAnswerSwitchToggleStyle}"
+                                          VerticalAlignment="Center"
+                                          Checked="AutoAnswerToggle_Changed"
+                                          Unchecked="AutoAnswerToggle_Changed">
+                                <ToggleButton.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                   Text="Turn automatic answers on or off without leaving the interview. You can still use “AI Answer” manually when this is off."/>
+                                    </ToolTip>
+                                </ToggleButton.ToolTip>
+                            </ToggleButton>
+                        </StackPanel>
+
+                        <Button x:Name="MicToggleButton"
+                                Content="&#xE720;"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="13"
+                                Style="{StaticResource ToolbarIconCircleStyle}"
+                                Margin="0,0,8,0"
+                                Background="#4F46E5"
+                                Foreground="#EEF2FF"
+                                BorderBrush="#818CF8"
+                                Click="MicToggleButton_Click"
+                                VerticalAlignment="Center">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Microphone capture for the interview. Indigo chip: listening. Click to mute your mic when you do not want speech sent to transcription."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                        <Button x:Name="SpeakerToggleButton"
+                                Content="&#xE767;"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="13"
+                                Style="{StaticResource ToolbarIconCircleStyle}"
+                                Margin="0,0,10,0"
+                                Background="#4F46E5"
+                                Foreground="#EEF2FF"
+                                BorderBrush="#818CF8"
+                                Click="SpeakerToggleButton_Click"
+                                VerticalAlignment="Center">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="System / speaker audio (what you hear from the call). Used to capture the interviewer’s voice for transcription and auto-answer."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+
+                        <Border Style="{StaticResource OrioHdrGhostBtn}"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                MouseLeftButtonDown="HideChip_MouseLeftButtonDown"
+                                ToolTipService.ShowDuration="60000">
+                            <Border.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Hide to a small chip at the top of the screen (same as other screens). Click the chip to bring Smeed AI back."/>
+                                </ToolTip>
+                            </Border.ToolTip>
+                            <iconPacks:PackIconMaterial Kind="ChevronUp"
+                                                        Width="16"
+                                                        Height="16"
+                                                        Foreground="#CBD5E1"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Button x:Name="EndSessionButton"
+                                Content="⏹"
+                                Margin="0,0,8,0"
+                                Style="{StaticResource EndSessionToolbarStyle}"
+                                Click="EndSessionButton_Click"
+                                IsEnabled="False"
+                                VerticalAlignment="Center">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Stops the current interview session, timers, and streaming. Your transcript may still be saved if you enabled that when creating the session."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+
+                    </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Session timer: fixed column so it is never clipped by horizontal overflow in the scroll area. -->
+                        <Border Grid.Column="1"
+                                Background="#B012121C"
+                                CornerRadius="8"
+                                BorderBrush="#45465A"
+                                BorderThickness="1"
+                                Padding="10,0"
+                                MinWidth="56"
+                                Height="28"
+                                VerticalAlignment="Center"
+                                Margin="6,0,8,0"
+                                ToolTipService.ShowDuration="60000">
+                            <Border.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Time remaining in the active interview session. The session may auto-extend shortly before it reaches zero if your plan allows it."/>
+                                </ToolTip>
+                            </Border.ToolTip>
+                            <TextBlock x:Name="SessionTimerTextBlock"
+                                       Text="00:00"
+                                       Foreground="#CBD5E1"
+                                       FontWeight="SemiBold"
+                                       FontSize="12"
+                                       FontFamily="Segoe UI"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </Border>
+
+                        <!-- Fixed close button (never clipped / never scrolls). -->
+                        <Button Grid.Column="2"
+                                Style="{StaticResource OrioAppCloseButtonStyle}"
+                                Click="CloseButton_Click"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Closes Smeed AI completely. End the interview session first if you want a clean shutdown."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                    </Grid>
+
+                    <!-- Transcript row -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Background="#9812121C" CornerRadius="10" BorderBrush="#3352525E" BorderThickness="1"
+                                Margin="0,0,0,0" Height="36">
+                            <Grid>
+                                <TextBox x:Name="TranscriptTextBlock"
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="{StaticResource OrioTextBrush}" TextWrapping="NoWrap" FontSize="12.5"
+                                         FontFamily="Segoe UI" FontWeight="SemiBold"
+                                         TextAlignment="Left"
+                                         VerticalContentAlignment="Center" Padding="12,0,44,0"
+                                         IsReadOnly="True"
+                                         IsReadOnlyCaretVisible="False"
+                                         CaretBrush="Transparent"
+                                         SelectionBrush="Transparent"
+                                         SelectionTextBrush="{StaticResource OrioTextBrush}"
+                                         Focusable="False"
+                                         IsHitTestVisible="False"
+                                         Cursor="Arrow"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                         ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                         Text=""/>
+
+                                <Button x:Name="TranscriptClearButton"
+                                        Width="32" Height="26"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0"
+                                        Padding="0"
+                                        Click="TranscriptClearButton_Click"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="#94A3B8"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        FontSize="12.5"
+                                        Content="&#xE894;"
+                                        Cursor="Hand"
+                                        FocusVisualStyle="{x:Null}">
+                                    <Button.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                       Text="Clear transcription"/>
+                                        </ToolTip>
+                                    </Button.ToolTip>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Next phase: detailed transcript expand button -->
+                        <!--
+                        <Button x:Name="TranscriptExpandButton"
+                                Grid.Column="1"
+                                Content="&#xE70D;"
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="12.5"
+                                Width="34"
+                                MinWidth="34"
+                                Padding="0"
+                                Click="TranscriptExpandButton_Click"
+                                Style="{StaticResource CompactClearButtonStyle}">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Show detailed transcript."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                        -->
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+            <!-- Detailed transcript card (separate card OUTSIDE answer; shows left/right). -->
+            <Border x:Name="TranscriptDetailCard"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Visibility="Collapsed"
+                    Background="#12121C"
+                    BorderBrush="#3352525E"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="12"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True">
+                <Grid Width="320">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Detailed transcription"
+                               Foreground="#E2E8F0"
+                               FontFamily="Segoe UI"
+                               FontWeight="SemiBold"
+                               FontSize="12.5"
+                               Margin="0,0,0,10"/>
+
+                    <ScrollViewer x:Name="TranscriptDetailScrollViewer"
+                                  Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="0">
+                        <TextBox x:Name="TranscriptDetailTextBox"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Foreground="#E2E8F0"
+                                 FontFamily="Segoe UI"
+                                 FontSize="12.5"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Hidden"
+                                 HorizontalScrollBarVisibility="Hidden"
+                                 Text=""/>
+                    </ScrollViewer>
+
+                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="TranscriptAutoScrollButton"
+                                Grid.Column="0"
+                                Content="Auto scroll: On"
+                                Style="{StaticResource CompactClearButtonStyle}"
+                                Height="28"
+                                Click="TranscriptAutoScrollButton_Click"
+                                HorizontalAlignment="Left"
+                                MinWidth="128"
+                                Padding="10,0"/>
+                        <Button x:Name="TranscriptCollapseButton"
+                                Grid.Column="1"
+                                Content="Collapse"
+                                Style="{StaticResource CompactClearButtonStyle}"
+                                Height="28"
+                                Click="TranscriptCollapseButton_Click"
+                                MinWidth="88"
+                                Padding="10,0"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Answer card: unchanged width (same as top toolbar) -->
+            <Border x:Name="AnswerCardBorder"
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Background="#B012121C"
+                    CornerRadius="16"
+                    BorderBrush="#40EA8F6C"
+                    BorderThickness="1"
+                    Padding="12"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True"
+                    Visibility="Collapsed">
+                <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                    <!-- Sticky header row: no border, just padding inside the card -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="Opacity" Foreground="{StaticResource OrioMutedBrush}" FontSize="11" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Margin="0,0,6,0">
+                            <TextBlock.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Fades the entire interview panel together—background, buttons, fields, and text—so you can see through to the meeting app."/>
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                        <Slider x:Name="WindowOpacitySlider"
+                                Width="88"
+                                Style="{StaticResource ChromeSliderStyle}"
+                                Minimum="55"
+                                Maximum="100"
+                            Value="100"
+                                ValueChanged="WindowOpacitySlider_ValueChanged"
+                                VerticalAlignment="Center"
+                                TickPlacement="None"
+                                IsSnapToTickEnabled="False">
+                            <Slider.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Drag to fade the whole panel uniformly (55%–100%). Lower values show more of the meeting behind the app."/>
+                                </ToolTip>
+                            </Slider.ToolTip>
+                        </Slider>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Assistant" Foreground="#FDBA74" FontWeight="Bold" FontSize="11.5"
+                                   FontFamily="Segoe UI" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Border CornerRadius="6" Padding="6,2" Background="#22EA8F6C" BorderBrush="#45D97757" BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Suggested answer" Foreground="#FED7AA" FontSize="9.5" FontWeight="SemiBold"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,10,0">
+                        <Button x:Name="AnswerHistoryPrevButton"
+                                Style="{StaticResource AnswerNavButtonStyle}"
+                                Click="AnswerHistoryPrev_Click"
+                                Visibility="Collapsed"
+                                Margin="0,0,6,0">
+                            <iconPacks:PackIconMaterial Kind="ChevronLeft" Width="16" Height="16"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Show the previous AI answer generated in this session."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                        <TextBlock x:Name="AnswerHistoryPositionText"
+                                   Foreground="#94A3B8" FontSize="11.5" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" MinWidth="36" TextAlignment="Center"
+                                   Visibility="Collapsed" Margin="0,0,6,0"/>
+                        <Button x:Name="AnswerHistoryNextButton"
+                                Style="{StaticResource AnswerNavButtonStyle}"
+                                Click="AnswerHistoryNext_Click"
+                                Visibility="Collapsed">
+                            <iconPacks:PackIconMaterial Kind="ChevronRight" Width="16" Height="16"
+                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Show the next AI answer if you have stepped back through the history."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                    </StackPanel>
+                    <Button x:Name="CloseAnswerButton" Grid.Column="3"
+                            Style="{StaticResource OrioAppCloseButtonStyle}"
+                            Click="CloseAnswerButton_Click"
+                            HorizontalAlignment="Right"
+                            IsHitTestVisible="True">
+                        <Button.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                           Text="Hide the answer panel. Your history is kept until you generate a new answer or end the session."/>
+                            </ToolTip>
+                        </Button.ToolTip>
+                    </Button>
+                    </Grid>
+
+                    <!-- Answer content area: single border around answer part -->
+                    <Border x:Name="AnswerContentBorder"
+                            Grid.Row="1"
+                            Margin="0,0,0,10"
+                            Background="#0B0F18"
+                            BorderBrush="#3352525E"
+                            BorderThickness="1"
+                            CornerRadius="14"
+                            Padding="12,10"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <ScrollViewer x:Name="InterviewMiddleScrollViewer"
+                                      Visibility="Collapsed"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="0"
+                                      CanContentScroll="False">
+                            <StackPanel>
+                                <Grid x:Name="AnswerSectionPanel"
+                                      Margin="0,0,0,0"
+                                      Visibility="Collapsed"
+                                      MinHeight="120">
+                                    <Border x:Name="AiAnswerBodyBorder"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            MinHeight="72"
+                                            Padding="2,0"
+                                            SnapsToDevicePixels="True"
+                                            UseLayoutRounding="True">
+                                    <emoji:RichTextBox x:Name="AiAnswerTextBlock"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Foreground="{StaticResource OrioTextBrush}"
+                                                     IsReadOnly="True"
+                                                     IsDocumentEnabled="True"
+                                                     VerticalScrollBarVisibility="Disabled"
+                                                     HorizontalScrollBarVisibility="Disabled"
+                                                 FontSize="14"
+                                                     FontFamily="Segoe UI, Segoe UI Emoji"
+                                                 FontWeight="SemiBold"
+                                                     Opacity="1"
+                                                     ScrollViewer.CanContentScroll="False"
+                                                     ScrollViewer.PanningMode="VerticalOnly"
+                                                     TextOptions.TextFormattingMode="Display"
+                                                     TextOptions.TextRenderingMode="Auto"/>
+                                    </Border>
+                                </Grid>
+
+                                <StackPanel x:Name="FollowUpSuggestionsPanel" Margin="0,10,0,0" Visibility="Collapsed">
+                                    <TextBlock Text="Did the interviewer ask something else?" Foreground="#94A3B8" FontSize="11" FontWeight="SemiBold"
+                                               Margin="0,0,0,8"/>
+                                    <WrapPanel x:Name="FollowUpChipsHost" Orientation="Horizontal" Margin="0,0,4,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Bottom: ask field + send — pinned at the end of the answer card -->
+                    <Grid x:Name="AskAiAnythingRow" Grid.Row="2" Margin="0,0,0,0" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="#9812121C" CornerRadius="10" BorderBrush="#3352525E" BorderThickness="1"
+                                Margin="0,0,8,0" Height="36">
+                            <Grid>
+                                <TextBox x:Name="QuestionTextBox"
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="{StaticResource OrioTextBrush}" TextWrapping="NoWrap" FontSize="12.5"
+                                         FontFamily="Segoe UI" FontWeight="SemiBold"
+                                         VerticalContentAlignment="Center" Padding="9,6"
+                                         CaretBrush="#F8FAFC"
+                                         PreviewKeyDown="QuestionTextBox_PreviewKeyDown"
+                                         Text=""/>
+                                <TextBlock x:Name="QuestionPlaceholderText"
+                                           Text="Ask AI anything... (Ctrl+/)"
+                                           Foreground="{StaticResource OrioMutedBrush}"
+                                           FontFamily="Segoe UI"
+                                           FontSize="12.5"
+                                           Margin="12,0,34,0"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Text, ElementName=QuestionTextBox}" Value=""/>
+                                                        <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=QuestionTextBox}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <Button x:Name="QuestionInlineClearButton"
+                                        Content="✕"
+                                        Width="26"
+                                        Height="26"
+                                        FontSize="12"
+                                        FontWeight="Bold"
+                                        Foreground="#CBD5E1"
+                                        Background="#2A2A38"
+                                        BorderBrush="#3F3F50"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0"
+                                        Padding="0"
+                                        Click="QuestionClearButton_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="bd"
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="8">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="bd" Property="Background" Value="#3F3F50"/>
+                                                                <Setter TargetName="bd" Property="BorderBrush" Value="#5C5C6A"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="bd" Property="Background" Value="#1E1E2A"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=QuestionTextBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Button x:Name="AskButton" Grid.Column="1"
+                                Click="AskButton_Click" Style="{StaticResource CoralSendButtonStyle}"
+                                ToolTipService.ShowDuration="60000">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                               Text="Send question (Enter)."/>
+                                </ToolTip>
+                            </Button.ToolTip>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

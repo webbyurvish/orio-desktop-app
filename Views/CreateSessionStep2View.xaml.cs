@@ -13,9 +13,6 @@ public partial class CreateSessionStep2View : UserControl
     private bool _languagesLoaded;
 
     private sealed record SpeechLocaleOption(string Locale, string Label);
-    private const string DefaultExtraContext =
-        "Keep answers to the point and with a coding example and make it cold so interviewer should be happy";
-
     // BCP-47 locales for interviews: Azure Speech-to-Text + Azure OpenAI (keep in sync with
     // orio-web-app/src/constants/azureSpeechSttLocales.ts). Excludes variants we don’t use.
     private static readonly SpeechLocaleOption[] AzureSpeechSttLocales =
@@ -115,6 +112,16 @@ public partial class CreateSessionStep2View : UserControl
         MoreOptionsPopup.PlacementTarget = SharedHeader.MoreMenuAnchorElement;
         MoveOptionsPopup.PlacementTarget = SharedHeader.MoveMenuAnchorElement;
         EnsureLanguageOptionsLoaded();
+        RefreshExtraContextPlaceholder();
+    }
+
+    private void ExtraContextTextBox_TextChanged(object sender, TextChangedEventArgs e) =>
+        RefreshExtraContextPlaceholder();
+
+    private void RefreshExtraContextPlaceholder()
+    {
+        var empty = string.IsNullOrWhiteSpace(ExtraContextTextBox.Text);
+        ExtraContextPlaceholder.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -237,22 +244,8 @@ public partial class CreateSessionStep2View : UserControl
     }
 
     public bool SimpleLanguage => SimpleLanguageToggle.IsChecked ?? false;
+    public bool NaturalSpeakingMode => NaturalSpeakingModeToggle.IsChecked ?? false;
     public string ExtraContext => (ExtraContextTextBox.Text ?? string.Empty).Trim();
-
-    public string SelectedAiModel
-    {
-        get
-        {
-            if (AiModelComboBox.SelectedItem is ComboBoxItem item)
-            {
-                var text = (item.Content?.ToString() ?? "GPT-4.1 Mini").Trim();
-                if (text.StartsWith("GPT-4.1 Mini", StringComparison.OrdinalIgnoreCase))
-                    return "GPT-4.1 Mini";
-                return text;
-            }
-            return "GPT-4.1 Mini";
-        }
-    }
 
     public bool SaveTranscript => SaveTranscriptToggle.IsChecked ?? false;
 
@@ -262,8 +255,9 @@ public partial class CreateSessionStep2View : UserControl
         LanguageComboBox.SelectedIndex = 0; // English (India)
 
         SimpleLanguageToggle.IsChecked = true;
-        ExtraContextTextBox.Text = DefaultExtraContext;
-        AiModelComboBox.SelectedIndex = 0;
+        NaturalSpeakingModeToggle.IsChecked = false;
+        ExtraContextTextBox.Text = string.Empty;
+        RefreshExtraContextPlaceholder();
         SaveTranscriptToggle.IsChecked = true;
     }
 

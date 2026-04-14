@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Interop;
 
 namespace AiInterviewAssistant;
 
@@ -46,6 +48,22 @@ public partial class App : Application
         // If launched via orioai://start?sessionId=...&apiBaseUrl=...&token=..., override settings so this session is used for logging
         ApplyProtocolLaunchArgs(e.Args);
         DesktopLogger.Info($"After protocol parse: LaunchedViaProtocol={LaunchedViaProtocol} ApiBaseUrl={Settings.ApiBaseUrl} CallSessionId={Settings.CallSessionId} TokenPresent={!string.IsNullOrWhiteSpace(Settings.ApiBearerToken)}");
+    }
+
+    private void ToolTip_OnOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToolTip tt) return;
+
+        // ToolTips are hosted in their own popup HWND; exclude that HWND from capture too.
+        try
+        {
+            if (PresentationSource.FromVisual(tt) is HwndSource src)
+                WindowPrivacy.ApplyToHwnd(src.Handle);
+        }
+        catch
+        {
+            // best-effort
+        }
     }
 
     private static void ApplyProtocolLaunchArgs(string[]? startupArgs)
@@ -116,6 +134,11 @@ public class AppSettings
     public string CallSessionId { get; set; } = "AB589C99-0980-4467-8AF5-ADAB340FE1A0";
     public string? ResumeId { get; set; }
     public string? SessionLanguage { get; set; }
+
+    /// <summary>
+    /// When enabled, writes verbose streaming diagnostics into <see cref="DesktopLogger"/> to debug bursty token streaming.
+    /// </summary>
+    public bool StreamDebugLogs { get; set; } = false;
 }
 
 public class DesktopAuthSettings

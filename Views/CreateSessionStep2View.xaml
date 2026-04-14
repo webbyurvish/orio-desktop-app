@@ -57,7 +57,7 @@
                                     <ComboBox.ToolTip>
                                         <ToolTip>
                                             <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                       Text="Applies to speech recognition and model output. You can change models separately below."/>
+                                                       Text="Applies to speech recognition and AI answer language."/>
                                         </ToolTip>
                                     </ComboBox.ToolTip>
                                 </ComboBox>
@@ -84,6 +84,29 @@
                                         </ToggleButton.ToolTip>
                                     </ToggleButton>
                                 </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Natural mode" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0" VerticalAlignment="Center">
+                                            <Border.ToolTip>
+                                                <ToolTip>
+                                                    <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                               Text="When on, answers sound like natural speech—thinking out loud, conversational—so they are easier to say in a live interview without sounding like you are reading an AI script."/>
+                                                </ToolTip>
+                                            </Border.ToolTip>
+                                            <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <ToggleButton x:Name="NaturalSpeakingModeToggle" Grid.Column="1" Style="{StaticResource OrioSwitchToggleStyle}" VerticalAlignment="Center" IsChecked="False">
+                                        <ToggleButton.ToolTip>
+                                            <ToolTip>
+                                                <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                           Text="More human, spoken tone for suggested answers (recommended for live interviews)."/>
+                                            </ToolTip>
+                                        </ToggleButton.ToolTip>
+                                    </ToggleButton>
+                                </Grid>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -99,50 +122,33 @@
                                 </Border>
                             </StackPanel>
                             <Border Style="{StaticResource OrioFieldHostBorder}" Margin="0,0,0,10">
-                                <TextBox x:Name="ExtraContextTextBox" Text="Keep answers to the point and with a coding example and make it cold so interviewer should be happy"
-                                         Style="{StaticResource OrioFormMultilineTextBoxStyle}"
-                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="54" MaxHeight="72">
-                                    <TextBox.ToolTip>
-                                        <ToolTip>
-                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                       Text="Edit this anytime before or during the session. Keep instructions concrete (length, examples, style) for best results."/>
-                                        </ToolTip>
-                                    </TextBox.ToolTip>
-                                </TextBox>
+                                <Grid>
+                                    <TextBox x:Name="ExtraContextTextBox"
+                                             Text=""
+                                             Style="{StaticResource OrioFormMultilineTextBoxStyle}"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             MinHeight="54"
+                                             MaxHeight="72"
+                                             TextChanged="ExtraContextTextBox_TextChanged">
+                                        <TextBox.ToolTip>
+                                            <ToolTip>
+                                                <TextBlock Style="{StaticResource OrioTooltipBodyText}"
+                                                           Text="Edit this anytime before or during the session. Keep instructions concrete (length, examples, style) for best results."/>
+                                            </ToolTip>
+                                        </TextBox.ToolTip>
+                                    </TextBox>
+                                    <TextBlock x:Name="ExtraContextPlaceholder"
+                                               Text="e.g. Be concise, include a short code example when helpful, match seniority level…"
+                                               Padding="10,8"
+                                               FontSize="13"
+                                               FontStyle="Italic"
+                                               Foreground="#64748B"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Top"
+                                               IsHitTestVisible="False"/>
+                                </Grid>
                             </Border>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <iconPacks:PackIconMaterial Kind="BriefcaseOutline" Width="16" Height="16" Foreground="#CBD5E1" Margin="0,0,6,0"
-                                                            ToolTipService.ShowDuration="60000">
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip>
-                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                       Text="Model used to draft answers during the interview. Faster models respond quicker; larger models can be more detailed."/>
-                                        </ToolTip>
-                                    </ToolTipService.ToolTip>
-                                </iconPacks:PackIconMaterial>
-                                <TextBlock Text="AI Model" Foreground="{StaticResource OrioTextBrush}" FontSize="15" FontWeight="SemiBold"/>
-                                <Border Style="{StaticResource OrioInfoHintBorder}" Margin="7,0,0,0">
-                                    <Border.ToolTip>
-                                        <ToolTip>
-                                            <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                       Text="Balances speed and depth. “Mini” is recommended for live interviews; upgrade if you need richer explanations and can wait a bit longer."/>
-                                        </ToolTip>
-                                    </Border.ToolTip>
-                                    <TextBlock Style="{StaticResource OrioInfoHintGlyph}"/>
-                                </Border>
-                            </StackPanel>
-                            <ComboBox x:Name="AiModelComboBox" Style="{StaticResource OrioComboBoxStyle}" SelectedIndex="0" Margin="0,0,0,10">
-                                <ComboBox.ToolTip>
-                                    <ToolTip>
-                                        <TextBlock Style="{StaticResource OrioTooltipBodyText}"
-                                                   Text="Your choice applies to this session only. Billing or limits depend on your Smeed AI plan and API usage."/>
-                                    </ToolTip>
-                                </ComboBox.ToolTip>
-                                <ComboBoxItem Content="GPT-4.1 Mini    Recommended    Fast"/>
-                                <ComboBoxItem Content="GPT-4.1"/>
-                                <ComboBoxItem Content="GPT-4o"/>
-                            </ComboBox>
 
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>

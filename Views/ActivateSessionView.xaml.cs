@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,6 +42,9 @@ public partial class ActivateSessionView : UserControl
 
     private bool _audioTestRunning;
 
+    private bool _isPaidInterviewSession;
+    private bool _primaryActionIsBuyCredits;
+
     private static readonly TimeSpan MicNoSignalFailAfter = TimeSpan.FromSeconds(6);
     private static readonly TimeSpan SystemNoSignalFailAfter = TimeSpan.FromSeconds(4);
 
@@ -63,6 +67,7 @@ public partial class ActivateSessionView : UserControl
 
     public event RoutedEventHandler? BackRequested;
     public event RoutedEventHandler? ActivateRequested;
+    public event RoutedEventHandler? BuyCreditsRequested;
     public event RoutedEventHandler? CloseRequested;
     public event RoutedEventHandler? MinimizeRequested;
     public event Action<StartupWindowSlot>? WindowSlotRequested;
@@ -78,12 +83,16 @@ public partial class ActivateSessionView : UserControl
         MoreOptionsPopup.PlacementTarget = SharedHeader.MoreMenuAnchorElement;
         MoveOptionsPopup.PlacementTarget = SharedHeader.MoveMenuAnchorElement;
 
+        CreditsState.Current.PropertyChanged += CreditsState_OnPropertyChanged;
+
         LoadAudioDevices();
         _uiMeterTimer.Start();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        CreditsState.Current.PropertyChanged -= CreditsState_OnPropertyChanged;
+
         _uiMeterTimer.Stop();
         StopAudioTest();
 
@@ -168,9 +177,21 @@ public partial class ActivateSessionView : UserControl
         BackRequested?.Invoke(this, new RoutedEventArgs());
     }
 
-    private void Activate_Click(object sender, MouseButtonEventArgs e)
+    private void CreditsState_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CreditsState.CreditsText) && _isPaidInterviewSession)
+            UpdatePrimaryActionFromCredits();
+    }
+
+    private void PrimaryAction_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (_primaryActionIsBuyCredits)
+        {
+            BuyCreditsRequested?.Invoke(this, new RoutedEventArgs());
+            return;
+        }
+
         ActivateRequested?.Invoke(this, new RoutedEventArgs());
     }
 
@@ -228,8 +249,12 @@ public partial class ActivateSessionView : UserControl
     /// <see cref="UIElement.Visibility"/> toggled, so <see cref="OnLoaded"/> does not re-run and stale
     /// &quot;Working&quot; state must be cleared explicitly.
     /// </summary>
-    public void PrepareForDisplay()
+    public void PrepareForDisplay() => PrepareForDisplay(_isPaidInterviewSession);
+
+    public void PrepareForDisplay(bool isPaidInterviewSession)
     {
+        _isPaidInterviewSession = isPaidInterviewSession;
+
         StopAudioTest();
         _micEverWorked = false;
         _systemEverWorked = false;
@@ -252,6 +277,42 @@ public partial class ActivateSessionView : UserControl
             SystemStatusText.Text = $"Audio devices error: {ex.Message}";
             MicStatusText.Foreground = BadBrush;
             SystemStatusText.Foreground = BadBrush;
+        }
+
+        UpdatePrimaryActionFromCredits();
+    }
+
+    private void UpdatePrimaryActionFromCredits()
+    {
+        if (!_isPaidInterviewSession)
+        {
+            _primaryActionIsBuyCredits = false;
+            PrimaryActionText.Text = "Activate (0.5 credit)";
+            if (PrimaryActionToolTip.Content is TextBlock freeTb)
+            {
+                freeTb.Text =
+                    "Starts the interview timer. Free sessions run for the free time window; paid sessions use 0.5 credit for the first block and can auto-extend.";
+            }
+
+            return;
+        }
+
+        var needBuy = !CreditsState.Current.HasSufficientCreditsForPaidActivation();
+        _primaryActionIsBuyCredits = needBuy;
+        if (PrimaryActionToolTip.Content is not TextBlock tb)
+            return;
+
+        if (needBuy)
+        {
+            PrimaryActionText.Text = "Buy credits";
+            tb.Text =
+                "You need at least 0.5 interview credit to activate. Click to open the website pricing section in your browser.";
+        }
+        else
+        {
+            PrimaryActionText.Text = "Activate (0.5 credit)";
+            tb.Text =
+                "Starts the paid interview timer. 0.5 credit covers the first block of time; the app can auto-extend near the end of the window.";
         }
     }
 

@@ -13,6 +13,7 @@ public partial class RestoreChipWindow : Window
     public RestoreChipWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => WindowPrivacy.Apply(this);
     }
 
     public event EventHandler? RestoreRequested;

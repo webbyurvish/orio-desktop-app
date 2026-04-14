@@ -21,6 +21,7 @@ public partial class MoveOverlayWindow : Window
     private MoveOverlayWindow(Rectangle screenBoundsPx, double dipPerPx)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => WindowPrivacy.Apply(this);
         _screenBoundsPx = screenBoundsPx;
         _dipPerPx = dipPerPx;
 

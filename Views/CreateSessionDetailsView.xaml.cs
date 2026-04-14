@@ -47,6 +47,7 @@ public partial class CreateSessionDetailsView : UserControl
         MoreOptionsPopup.PlacementTarget = SharedHeader.MoreMenuAnchorElement;
         MoveOptionsPopup.PlacementTarget = SharedHeader.MoveMenuAnchorElement;
         _ = ReloadResumesAsync();
+        UpdateNextButtonState();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -61,7 +62,10 @@ public partial class CreateSessionDetailsView : UserControl
     private void ResumeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ResumeComboBox.SelectedItem is not ResumeOption ro || ro.Id != UploadResumeSentinelId)
+        {
+            UpdateNextButtonState();
             return;
+        }
 
         OpenResumeUploadPageInBrowser();
 
@@ -81,6 +85,8 @@ public partial class CreateSessionDetailsView : UserControl
         {
             ResumeComboBox.SelectionChanged += ResumeComboBox_SelectionChanged;
         }
+
+        UpdateNextButtonState();
     }
 
     private static string GetWebAppOrigin()
@@ -199,6 +205,11 @@ public partial class CreateSessionDetailsView : UserControl
     private void Next_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (!IsCompanyValid())
+        {
+            UpdateNextButtonState(showValidation: true);
+            return;
+        }
         NextRequested?.Invoke(this, new RoutedEventArgs());
     }
 
@@ -256,6 +267,7 @@ public partial class CreateSessionDetailsView : UserControl
             ResumeLoadStatusText.Text = realCount > 0
                 ? $"{realCount} resume(s) found. Use \"+ Upload a resume\" to add another on the web."
                 : "No resumes yet. Choose \"+ Upload a resume\" to open the web upload page.";
+            UpdateNextButtonState();
         }
         catch (Exception ex)
         {
@@ -266,11 +278,48 @@ public partial class CreateSessionDetailsView : UserControl
             ResumeComboBox.SelectedIndex = -1;
             ResumeLoadStatusText.Text = "Unable to load resumes. You can still open the web upload page.";
             DesktopLogger.Error($"CreateSessionDetailsView ReloadResumesAsync error: {ex}");
+            UpdateNextButtonState();
         }
     }
 
     public string Company => (CompanyTextBox.Text ?? string.Empty).Trim();
     public string JobDescription => (JobDescriptionTextBox.Text ?? string.Empty).Trim();
+
+    private bool IsCompanyValid() =>
+        !string.IsNullOrWhiteSpace(CompanyTextBox.Text);
+
+    private void UpdateNextButtonState(bool showValidation = false)
+    {
+        var companyOk = IsCompanyValid();
+        var enabled = companyOk;
+
+        if (CompanyValidationText != null)
+            CompanyValidationText.Visibility = (!companyOk && showValidation) ? Visibility.Visible : Visibility.Collapsed;
+
+        if (CompanyFieldHostBorder != null)
+        {
+            CompanyFieldHostBorder.BorderBrush = (!companyOk && showValidation)
+                ? (Brush)new BrushConverter().ConvertFromString("#F87171")!
+                : (Brush)new BrushConverter().ConvertFromString("#3352525E")!;
+            CompanyFieldHostBorder.BorderThickness = (!companyOk && showValidation) ? new Thickness(1.5) : new Thickness(1);
+        }
+
+        if (NextButtonBorder != null)
+        {
+            NextButtonBorder.Opacity = enabled ? 1.0 : 0.45;
+            NextButtonBorder.Cursor = enabled ? Cursors.Hand : Cursors.Arrow;
+            NextButtonBorder.IsHitTestVisible = enabled;
+        }
+
+        if (NextButtonText != null)
+            NextButtonText.Text = SelectedResumeId == null ? "Continue without resume" : "Next";
+    }
+
+    private void CompanyTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // As soon as the user starts typing, clear any “required” error state.
+        UpdateNextButtonState(showValidation: false);
+    }
 
     public void ResetForNewSession()
     {
@@ -281,6 +330,7 @@ public partial class CreateSessionDetailsView : UserControl
         // The next ReloadResumesAsync may pick index 0; we reset again after reload in the host when needed.
         ResumeComboBox.SelectedIndex = -1;
         ResumeLoadStatusText.Text = string.Empty;
+        UpdateNextButtonState(showValidation: false);
     }
 
     public Guid? SelectedResumeId
